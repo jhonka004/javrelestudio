@@ -4,6 +4,7 @@
 import { useEffect, lazy, Suspense } from 'react'
 import LiquidCanvasBackground from './components/LiquidCanvasBackground'
 import Navbar                 from './components/Navbar'
+import ElasticSideMenu        from './components/ElasticSideMenu'
 import HeroSection            from './components/HeroSection'
 import PortfolioSection       from './components/PortfolioSection'
 import ServicesSection        from './components/ServicesSection'
@@ -34,6 +35,7 @@ export default function App() {
       {/* Page structure (z-10+) */}
       <div className="relative z-10">
         <Navbar />
+        <ElasticSideMenu />
 
         <main>
           <HeroSection />
@@ -55,7 +57,7 @@ export default function App() {
                     Laboratorio<br />
                     <span className="gradient-text">Interactivo Papertrails</span>
                   </h2>
-                  <p className="reveal text-[#475569] text-lg max-w-2xl">
+                  <p className="reveal text-[#334155] text-lg max-w-2xl">
                     Explora un mundo procedural 3D en tiempo real directamente en el navegador:
                     física de papel plegado, clima dinámico, ciclo día/noche y navegación libre.
                   </p>
@@ -73,7 +75,7 @@ export default function App() {
                   ].map(chip => (
                     <span
                       key={chip}
-                      className="glass-card text-xs font-mono text-[#475569] px-3 py-1.5 rounded-full"
+                      className="glass-card text-xs font-mono font-medium text-[#334155] px-3 py-1.5 rounded-full"
                     >
                       {chip}
                     </span>

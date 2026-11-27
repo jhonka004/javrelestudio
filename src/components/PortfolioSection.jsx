@@ -1,80 +1,82 @@
 /**
- * PortfolioSection.jsx — Bento Grid Asimétrico Moderno
- * 8 plataformas reales de Javrel Studio con tamaños variables
- * (tarjetas destacadas grandes combinadas con medianas y verticales).
+ * PortfolioSection.jsx — Bento Grid Asimétrico (Estilo 21st.dev)
+ * 8 plataformas reales sin huecos vacíos, con enlaces verificados
+ * (Green Emeralds -> https://greenesmeraldcol.com) y contraste alto.
  */
 import MorphingProjectCard from './MorphingProjectCard'
-import { useEffect, useRef } from 'react'
 
 const PROJECTS = [
   {
     name: 'ComerCIA POS',
-    desc: 'Sistema POS, Inventario y Facturación en la Nube diseñado para operar múltiples sucursales en tiempo real.',
+    desc: 'Sistema POS, inventario multi-sucursal y facturación electrónica en la nube para comercios modernos.',
     url: 'https://comercia.cloud',
     tag: 'SaaS · POS · ERP',
-    metrics: 'Cloud ERP',
     color: '#2563EB',
-    emoji: '🏪',
+    previewId: 'comercia',
+    techStack: ['React', 'Cloud API', 'Facturación'],
     featured: true,
-    bentoClass: 'md:col-span-2 lg:col-span-2 lg:row-span-2',
+    bentoClass: 'md:col-span-2 lg:col-span-4',
   },
   {
     name: 'JavrelStore',
-    desc: 'E-commerce Tech & Gaming con checkout ultrarrápido y catálogo dinámico.',
+    desc: 'E-commerce Tech & Gaming con catálogo dinámico y checkout ultrarrápido.',
     url: 'https://javrelstore.shop',
     tag: 'E-commerce',
     color: '#0891B2',
-    emoji: '🎮',
-    bentoClass: 'md:col-span-1 lg:col-span-1',
+    previewId: 'javrelstore',
+    techStack: ['Vite', 'Pagos Online'],
+    bentoClass: 'md:col-span-1 lg:col-span-2',
   },
   {
     name: 'Évora Perfumes',
-    desc: 'Boutique online de perfumería de lujo con experiencia sensorial y filtros por notas.',
+    desc: 'Boutique online de perfumería de lujo con búsqueda por notas olfativas.',
     url: 'https://evoraperfumes.com',
-    tag: 'E-commerce · Luxury',
+    tag: 'Luxury · Retail',
     color: '#4F46E5',
-    emoji: '🌸',
-    bentoClass: 'md:col-span-1 lg:col-span-1',
+    previewId: 'evora',
+    techStack: ['UI Editorial', 'E-commerce'],
+    bentoClass: 'md:col-span-1 lg:col-span-2',
   },
   {
     name: 'Clones & Periféricos',
-    desc: 'Tienda especializada en hardware, PC Gamer y periféricos de alto desempeño.',
+    desc: 'Plataforma especializada en hardware, PC Gamer y periféricos de alto rendimiento.',
     url: 'https://clonesyperifericos.com',
     tag: 'Hardware · Gaming',
-    metrics: 'Alto Tráfico',
     color: '#2563EB',
-    emoji: '🖥️',
+    previewId: 'clones',
+    techStack: ['Catálogo Pro', 'Filtros Técnicos'],
     featured: true,
-    bentoClass: 'md:col-span-2 lg:col-span-2',
+    bentoClass: 'md:col-span-2 lg:col-span-4',
+  },
+  {
+    name: 'Green Emeralds',
+    desc: 'Joyería y exportación internacional de esmeraldas colombianas certificadas.',
+    url: 'https://greenesmeraldcol.com',
+    tag: 'Export · Joyería',
+    color: '#059669',
+    previewId: 'green',
+    techStack: ['Multi-idioma', 'Certificación'],
+    bentoClass: 'md:col-span-1 lg:col-span-3',
   },
   {
     name: 'Realpe Shoes',
     desc: 'Tienda online de calzado urbano y deportivo con gestión inteligente de tallas.',
     url: 'https://realpeshoes.vercel.app',
-    tag: 'Fashion · E-commerce',
+    tag: 'Fashion · Store',
     color: '#0891B2',
-    emoji: '👟',
-    bentoClass: 'md:col-span-1 lg:col-span-1',
-  },
-  {
-    name: 'Green Esmeralds',
-    desc: 'Plataforma de joyería y exportación internacional de esmeraldas colombianas certificadas.',
-    url: 'https://greenesmeraldsol.com',
-    tag: 'Export · Luxury',
-    metrics: 'Global',
-    color: '#059669',
-    emoji: '💎',
-    featured: true,
-    bentoClass: 'md:col-span-2 lg:col-span-2',
+    previewId: 'realpe',
+    techStack: ['Vercel', 'Tallas Live'],
+    bentoClass: 'md:col-span-1 lg:col-span-3',
   },
   {
     name: 'Mr. Pollo',
     desc: 'Plataforma de pedidos en línea y domicilios optimizada para conversión móvil.',
     url: 'https://mrpollosp.com',
-    tag: 'FoodTech · Orders',
+    tag: 'FoodTech · Delivery',
     color: '#D97706',
-    emoji: '🍗',
-    bentoClass: 'md:col-span-1 lg:col-span-1',
+    previewId: 'mrpollo',
+    techStack: ['Pedidos Web', 'Mobile First'],
+    bentoClass: 'md:col-span-1 lg:col-span-3',
   },
   {
     name: 'JR CellCity',
@@ -82,54 +84,41 @@ const PROJECTS = [
     url: 'https://jrcellcity-demo.pages.dev',
     tag: 'Mobile · Catálogo',
     color: '#4F46E5',
-    emoji: '📱',
-    bentoClass: 'md:col-span-1 lg:col-span-1',
+    previewId: 'jrcellcity',
+    techStack: ['Cloudflare Pages', 'Búsqueda'],
+    bentoClass: 'md:col-span-1 lg:col-span-3',
   },
 ]
 
 export default function PortfolioSection() {
-  const sectionRef = useRef(null)
-
-  useEffect(() => {
-    const els = sectionRef.current?.querySelectorAll('.reveal')
-    const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => {
-        if (e.isIntersecting) e.target.classList.add('visible')
-      }),
-      { threshold: 0.1 }
-    )
-    els?.forEach((el) => obs.observe(el))
-    return () => obs.disconnect()
-  }, [])
-
   return (
-    <section id="portfolio" ref={sectionRef} className="relative py-28 px-6">
+    <section id="portfolio" className="relative py-24 sm:py-28 px-6 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Section header */}
-        <div className="mb-14">
-          <div className="reveal flex items-center gap-3 mb-4">
-            <span className="font-mono text-xs font-semibold text-[#2563EB] uppercase tracking-widest">
+        <div className="mb-12 sm:mb-14">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="font-mono text-xs font-bold text-[#2563EB] uppercase tracking-widest">
               Portafolio Seleccionado
             </span>
-            <div className="flex-1 h-px bg-gradient-to-r from-blue-600/30 to-transparent max-w-xs" />
+            <div className="flex-1 h-px bg-gradient-to-r from-blue-600/35 to-transparent max-w-xs" />
           </div>
-          <h2 className="reveal text-4xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] leading-tight mb-4 tracking-tight">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] leading-tight mb-4 tracking-tight">
             Plataformas que<br />
             <span className="gradient-text">impulsan negocios reales</span>
           </h2>
-          <p className="reveal text-[#475569] text-lg max-w-2xl">
-            8 sistemas en producción — desde ecosistemas e-commerce de alto tráfico hasta ERP y POS en la nube.
+          <p className="text-[#334155] text-lg max-w-2xl">
+            8 sistemas en producción — cada tarjeta es una ventana viva hacia nuestras plataformas web, e-commerce y SaaS.
           </p>
         </div>
 
-        {/* Modern Asymmetric Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 auto-rows-auto">
+        {/* Balanced Asymmetric Bento Grid (6 cols on lg -> zero empty gaps) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
           {PROJECTS.map((project, i) => (
             <MorphingProjectCard
               key={project.name}
               project={project}
               bentoClass={project.bentoClass}
-              delay={i * 55}
+              delay={i * 45}
             />
           ))}
         </div>

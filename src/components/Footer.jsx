@@ -3,14 +3,14 @@
  */
 export default function Footer() {
   return (
-    <footer className="relative border-t border-zinc-100 py-10 px-6">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-zinc-400">
+    <footer className="relative border-t border-slate-200/80 bg-white py-10 px-6">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-[#334155]">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-ink flex items-center justify-center">
+          <div className="w-6 h-6 rounded bg-[#0F172A] flex items-center justify-center">
             <span className="font-mono text-[9px] font-bold" style={{ color: '#06B6D4' }}>JS</span>
           </div>
-          <span className="font-semibold text-ink">Javrel Studio</span>
-          <span className="text-zinc-300">·</span>
+          <span className="font-semibold text-[#0F172A]">Javrel Studio</span>
+          <span className="text-slate-300">·</span>
           <span>© {new Date().getFullYear()} Todos los derechos reservados</span>
         </div>
 

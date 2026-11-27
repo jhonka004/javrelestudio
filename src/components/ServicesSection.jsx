@@ -2,6 +2,7 @@
  * ServicesSection.jsx — 4 pillars with glassmorphism cards
  */
 import { useEffect, useRef } from 'react'
+import LivingVectorArt from './LivingVectorArt'
 
 const SERVICES = [
   {
@@ -89,14 +90,18 @@ export default function ServicesSection() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
-        <div className="mb-16 text-center">
+        <div className="mb-16 text-center relative">
+          <LivingVectorArt
+            variant="services"
+            className="mx-auto w-72 h-24 opacity-80 mb-2"
+          />
           <div className="reveal inline-flex items-center gap-2 glass-card rounded-full px-4 py-2 mb-6 text-xs font-mono font-semibold uppercase tracking-widest text-[#2563EB]">
             Ecosistema de Soluciones
           </div>
           <h2 className="reveal text-4xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] leading-tight mb-4 tracking-tight">
             Qué <span className="gradient-text">desarrollamos</span>
           </h2>
-          <p className="reveal text-[#475569] text-lg max-w-2xl mx-auto">
+          <p className="reveal text-[#334155] text-lg max-w-2xl mx-auto font-medium">
             Cuatro pilares tecnológicos para llevar tu negocio al siguiente nivel digital.
           </p>
         </div>
@@ -123,7 +128,7 @@ export default function ServicesSection() {
 
               <ul className="space-y-2">
                 {s.items.map(item => (
-                  <li key={item} className="flex items-start gap-2 text-sm text-[#475569]">
+                  <li key={item} className="flex items-start gap-2 text-sm text-[#334155]">
                     <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
                     {item}
                   </li>

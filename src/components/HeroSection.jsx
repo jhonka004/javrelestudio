@@ -4,6 +4,7 @@
  * tipografía de alto contraste (#0F172A / #475569) y botones magnéticos.
  */
 import { useEffect, useRef, lazy, Suspense } from 'react'
+import LivingVectorArt from './LivingVectorArt'
 
 const HeroParticleLogoCanvas = lazy(() => import('./HeroParticleLogoCanvas'))
 
@@ -48,6 +49,12 @@ export default function HeroSection() {
       <Suspense fallback={null}>
         <HeroParticleLogoCanvas />
       </Suspense>
+
+      {/* Vectores vivos SVG + GSAP estilo Hello Monday */}
+      <LivingVectorArt
+        variant="hero"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] sm:w-[700px] sm:h-[700px] opacity-70 z-0"
+      />
 
       {/* Soft atmospheric depth halos */}
       <div
@@ -98,7 +105,7 @@ export default function HeroSection() {
 
         {/* Subheadline */}
         <p
-          className="max-w-2xl mx-auto text-[#475569] text-lg sm:text-xl leading-relaxed mb-11 animate-fade-up"
+          className="max-w-2xl mx-auto text-[#334155] text-lg sm:text-xl leading-relaxed mb-11 animate-fade-up font-medium"
           style={{ animationDelay: '0.55s', opacity: 0 }}
         >
           Plataformas web de alto rendimiento, sistemas ERP/CRM/POS a medida y automatización inteligente
@@ -142,7 +149,7 @@ export default function HeroSection() {
           ].map(({ n, label }) => (
             <div key={label} className="glass-card rounded-2xl px-5 py-3 flex flex-col items-center gap-0.5">
               <span className="text-2xl sm:text-3xl font-black gradient-text">{n}</span>
-              <span className="text-xs text-[#475569] font-medium">{label}</span>
+              <span className="text-xs text-[#334155] font-semibold">{label}</span>
             </div>
           ))}
         </div>

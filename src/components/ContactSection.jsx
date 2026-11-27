@@ -50,7 +50,7 @@ export default function ContactSection() {
             ¿Listo para construir<br />
             <span className="gradient-text">algo increíble?</span>
           </h2>
-          <p className="text-[#475569] text-lg">
+          <p className="text-[#334155] text-lg font-medium">
             Cuéntanos qué necesitas — te respondemos en menos de 24 h.
           </p>
         </div>
