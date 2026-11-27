@@ -92,7 +92,26 @@ const PROJECTS = [
 
 export default function PortfolioSection() {
   return (
-    <section id="portfolio" className="relative py-24 sm:py-28 px-6" style={{ background: 'linear-gradient(180deg, #F8FAFC 0%, #EFF3FA 60%, #F1F5F9 100%)' }}>
+    <section
+      id="portfolio"
+      className="relative py-24 sm:py-28 px-6 overflow-hidden"
+      style={{ background: '#FAFAFA' }}
+    >
+      {/* Mesh gradient lateral pastel — lavanda izquierda, durazno derecha */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div
+          className="absolute -left-32 top-0 w-[520px] h-[520px] rounded-full opacity-30"
+          style={{ background: 'radial-gradient(circle, #DDD6FE 0%, transparent 70%)', filter: 'blur(60px)' }}
+        />
+        <div
+          className="absolute -right-32 bottom-0 w-[520px] h-[520px] rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #BAE6FD 0%, transparent 70%)', filter: 'blur(60px)' }}
+        />
+        <div
+          className="absolute left-1/2 top-1/3 -translate-x-1/2 w-[400px] h-[300px] rounded-full opacity-15"
+          style={{ background: 'radial-gradient(circle, #FED7AA 0%, transparent 70%)', filter: 'blur(80px)' }}
+        />
+      </div>
       <div className="max-w-7xl mx-auto">
         {/* Section header */}
         <div className="mb-12 sm:mb-14">
