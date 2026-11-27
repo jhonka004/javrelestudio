@@ -132,13 +132,12 @@ export default function PortfolioSection() {
           </p>
         </div>
 
-        {/* Balanced Asymmetric Bento Grid (6 cols on lg -> zero empty gaps) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+        {/* Cuadrícula perfectamente uniforme y simétrica (todas las tarjetas misma dimensión) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 items-stretch">
           {PROJECTS.map((project) => (
             <BrowserPreviewCard
               key={project.name}
               project={project}
-              bentoClass={project.bentoClass}
             />
           ))}
         </div>
