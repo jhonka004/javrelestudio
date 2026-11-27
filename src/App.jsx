@@ -1,20 +1,34 @@
 /**
  * App.jsx — Root component, wires all sections together
+ * Optimizado para carga inicial < 1s:
+ *  - Hero + Portfolio + Navbar cargan de inmediato con cero librerías 3D/GSAP bloqueantes.
+ *  - Secciones pesadas o debajo del fold se cargan bajo demanda con React.lazy + Suspense.
  */
-import { useEffect, lazy, Suspense } from 'react'
+import { useEffect, lazy, Suspense, useState } from 'react'
 import LiquidCanvasBackground from './components/LiquidCanvasBackground'
 import Navbar                 from './components/Navbar'
-import ElasticSideMenu        from './components/ElasticSideMenu'
 import HeroSection            from './components/HeroSection'
 import PortfolioSection       from './components/PortfolioSection'
-import ParallaxTechScene      from './components/ParallaxTechScene'
-import ServicesSection        from './components/ServicesSection'
-import ContactSection         from './components/ContactSection'
-import Footer                 from './components/Footer'
 
+const ElasticSideMenu      = lazy(() => import('./components/ElasticSideMenu'))
+const ParallaxTechScene    = lazy(() => import('./components/ParallaxTechScene'))
+const ServicesSection      = lazy(() => import('./components/ServicesSection'))
 const InteractiveLabBanner = lazy(() => import('./components/InteractiveLabBanner'))
+const ContactSection       = lazy(() => import('./components/ContactSection'))
+const Footer               = lazy(() => import('./components/Footer'))
 
 export default function App() {
+  const [idleReady, setIdleReady] = useState(false)
+
+  useEffect(() => {
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(() => setIdleReady(true), { timeout: 400 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const t = window.setTimeout(() => setIdleReady(true), 150)
+    return () => window.clearTimeout(t)
+  }, [])
+
   // Global scroll-reveal observer
   useEffect(() => {
     const els = document.querySelectorAll('.reveal')
@@ -26,7 +40,7 @@ export default function App() {
     )
     els.forEach(el => obs.observe(el))
     return () => obs.disconnect()
-  }, [])
+  }, [idleReady])
 
   return (
     <>
@@ -36,16 +50,21 @@ export default function App() {
       {/* Page structure (z-10+) */}
       <div className="relative z-10">
         <Navbar />
-        <ElasticSideMenu />
+        {idleReady && (
+          <Suspense fallback={null}>
+            <ElasticSideMenu />
+          </Suspense>
+        )}
 
         <main>
           <HeroSection />
 
           <PortfolioSection />
 
-          <ParallaxTechScene />
-
-          <ServicesSection />
+          <Suspense fallback={<div className="h-96 bg-white" />}>
+            <ParallaxTechScene />
+            <ServicesSection />
+          </Suspense>
 
           {/* Javrel Lab section — Contenedor protagonista ancho completo */}
           <section id="lab" className="py-28 px-6 bg-[#F8FAFC]/80">
@@ -94,10 +113,14 @@ export default function App() {
             </div>
           </section>
 
-          <ContactSection />
+          <Suspense fallback={<div className="h-64 bg-white" />}>
+            <ContactSection />
+          </Suspense>
         </main>
 
-        <Footer />
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
       </div>
     </>
   )

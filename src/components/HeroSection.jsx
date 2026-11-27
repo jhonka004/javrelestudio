@@ -3,15 +3,27 @@
  * Integra HeroParticleLogoCanvas (emisor WebGL del logotipo JavrelStudio),
  * tipografía de alto contraste (#0F172A / #475569) y botones magnéticos.
  */
-import { useEffect, useRef, lazy, Suspense } from 'react'
-import LivingVectorArt from './LivingVectorArt'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 
 const HeroParticleLogoCanvas = lazy(() => import('./HeroParticleLogoCanvas'))
+const LivingVectorArt = lazy(() => import('./LivingVectorArt'))
 
 const HEADLINE_WORDS = ['Software,', 'IA', '&', 'Experiencias', 'Digitales']
 
 export default function HeroSection() {
   const badgeRef = useRef(null)
+  const [mountHeavyEffects, setMountHeavyEffects] = useState(false)
+
+  // Diferir Three.js y GSAP del Hero hasta después del primer render (< 1s FCP/LCP)
+  useEffect(() => {
+    let timerId = 0
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(() => setMountHeavyEffects(true), { timeout: 300 })
+      return () => window.cancelIdleCallback(idleId)
+    }
+    timerId = window.setTimeout(() => setMountHeavyEffects(true), 120)
+    return () => window.clearTimeout(timerId)
+  }, [])
 
   useEffect(() => {
     let t = 0
@@ -59,16 +71,16 @@ export default function HeroSection() {
         aria-hidden
       />
 
-      {/* WebGL Particle Logo Emitter (Three.js + Custom Shaders) */}
-      <Suspense fallback={null}>
-        <HeroParticleLogoCanvas />
-      </Suspense>
-
-      {/* Vectores vivos SVG + GSAP estilo Hello Monday */}
-      <LivingVectorArt
-        variant="hero"
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] sm:w-[700px] sm:h-[700px] opacity-65 z-0"
-      />
+      {/* WebGL Particle Logo Emitter (Three.js + Custom Shaders) — diferido post-LCP */}
+      {mountHeavyEffects && (
+        <Suspense fallback={null}>
+          <HeroParticleLogoCanvas />
+          <LivingVectorArt
+            variant="hero"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] sm:w-[700px] sm:h-[700px] opacity-65 z-0"
+          />
+        </Suspense>
+      )}
 
       {/* Soft atmospheric aurora halos */}
       <div
