@@ -1,7 +1,7 @@
 /**
- * PortfolioSection.jsx — Bento Grid Asimétrico (Estilo 21st.dev)
+ * PortfolioSection.jsx — Bento Grid Asimétrico (Estilo 21st.dev + Aurora)
  * 8 plataformas reales sin huecos vacíos, con enlaces verificados
- * (Green Emeralds -> https://greenesmeraldcol.com) y contraste alto.
+ * (Green Emeralds -> https://greenesmeraldscol.com/) y estética luminosa.
  */
 import MorphingProjectCard from './MorphingProjectCard'
 
@@ -51,7 +51,7 @@ const PROJECTS = [
   {
     name: 'Green Emeralds',
     desc: 'Joyería y exportación internacional de esmeraldas colombianas certificadas.',
-    url: 'https://greenesmeraldcol.com', // ✅ URL verificada: col con "c"
+    url: 'https://greenesmeraldscol.com/', // ✅ URL exacta con "s" en esmeralds
     tag: 'Export · Joyería',
     color: '#059669',
     previewId: 'green',
@@ -97,19 +97,19 @@ export default function PortfolioSection() {
       className="relative py-24 sm:py-28 px-6 overflow-hidden"
       style={{ background: '#FAFAFA' }}
     >
-      {/* Mesh gradient lateral pastel — lavanda izquierda, durazno derecha */}
+      {/* Mesh gradient Aurora lateral — azul eléctrico, violeta y magenta suave sobre blanco */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div
-          className="absolute -left-32 top-0 w-[520px] h-[520px] rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, #DDD6FE 0%, transparent 70%)', filter: 'blur(60px)' }}
+          className="absolute -left-32 top-0 w-[560px] h-[560px] rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #93C5FD 0%, transparent 70%)', filter: 'blur(70px)' }}
         />
         <div
-          className="absolute -right-32 bottom-0 w-[520px] h-[520px] rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #BAE6FD 0%, transparent 70%)', filter: 'blur(60px)' }}
+          className="absolute -right-32 bottom-0 w-[560px] h-[560px] rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #F9A8D4 0%, transparent 70%)', filter: 'blur(70px)' }}
         />
         <div
-          className="absolute left-1/2 top-1/3 -translate-x-1/2 w-[400px] h-[300px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #FED7AA 0%, transparent 70%)', filter: 'blur(80px)' }}
+          className="absolute left-1/2 top-1/3 -translate-x-1/2 w-[480px] h-[340px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #C4B5FD 0%, transparent 70%)', filter: 'blur(80px)' }}
         />
       </div>
       <div className="max-w-7xl mx-auto">

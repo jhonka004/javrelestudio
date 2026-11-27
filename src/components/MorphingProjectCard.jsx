@@ -8,7 +8,7 @@
  *  - Framer Motion: elevación spring, zoom en preview, fade de badges
  *  - Borde degradado 1px tipo "passport card" (violet→orange / blue→cyan)
  *  - Tipografía #0F172A / #334155 — alto contraste en modo claro
- *  - Green Emeralds → https://greenesmeraldcol.com ✅
+ *  - Green Emeralds → https://greenesmeraldscol.com/ ✅
  */
 
 import { useRef, useCallback, useState } from 'react'
@@ -175,7 +175,7 @@ function ProjectWindowPreview({ previewId, theme }) {
             {previewId === 'javrelstore' && 'javrelstore.shop'}
             {previewId === 'evora' && 'evoraperfumes.com'}
             {previewId === 'clones' && 'clonesyperifericos.com'}
-            {previewId === 'green' && 'greenesmeraldcol.com'}
+            {previewId === 'green' && 'greenesmeraldscol.com'}
             {previewId === 'realpe' && 'realpeshoes.vercel.app'}
             {previewId === 'mrpollo' && 'mrpollosp.com'}
             {previewId === 'jrcellcity' && 'jrcellcity-demo.pages.dev'}
@@ -387,15 +387,11 @@ export default function MorphingProjectCard({ project, bentoClass = '', delay = 
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Contenedor principal — geometría limpia, rounded-2xl */}
+      {/* Contenedor principal — geometría perfecta rounded-2xl + Glassmorphism profesional */}
       <div
-        className="relative w-full h-full rounded-2xl overflow-hidden"
+        className="relative w-full h-full rounded-2xl overflow-hidden bg-white/75 backdrop-blur-xl border border-white/60 shadow-xl shadow-slate-200/50"
         style={{
           background: theme.bg,
-          boxShadow: `
-            0 4px 24px -4px rgba(15,23,42,0.08),
-            0 1px 4px -1px rgba(15,23,42,0.06)
-          `,
           minHeight: 'inherit',
         }}
       >
@@ -412,13 +408,9 @@ export default function MorphingProjectCard({ project, bentoClass = '', delay = 
           }}
         />
 
-        {/* Capa glassmorphism sutil encima del gradiente */}
+        {/* Capa glassmorphism cristal esmerilado encima del gradiente */}
         <div
-          className="absolute inset-0 rounded-2xl"
-          style={{
-            background: 'rgba(255,255,255,0.45)',
-            backdropFilter: 'blur(0px)', // sin blur excesivo para no opacar el pastel
-          }}
+          className="absolute inset-0 rounded-2xl bg-white/45 backdrop-blur-md"
         />
 
         {/* Contenido */}

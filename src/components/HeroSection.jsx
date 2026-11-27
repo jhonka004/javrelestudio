@@ -43,8 +43,22 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-20 bg-gradient-to-b from-white via-[#F8FAFC] to-white"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-20 bg-white"
     >
+      {/* Degradado Aurora vibrante estilo Lovable que se difumina hacia el blanco */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `
+            radial-gradient(ellipse 65% 50% at 20% 25%, rgba(59,130,246,0.18) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 50% at 80% 30%, rgba(236,72,153,0.16) 0%, transparent 70%),
+            radial-gradient(ellipse 55% 45% at 50% 55%, rgba(139,92,246,0.16) 0%, transparent 72%),
+            linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 55%, #FFFFFF 100%)
+          `,
+        }}
+        aria-hidden
+      />
+
       {/* WebGL Particle Logo Emitter (Three.js + Custom Shaders) */}
       <Suspense fallback={null}>
         <HeroParticleLogoCanvas />
@@ -53,17 +67,17 @@ export default function HeroSection() {
       {/* Vectores vivos SVG + GSAP estilo Hello Monday */}
       <LivingVectorArt
         variant="hero"
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] sm:w-[700px] sm:h-[700px] opacity-70 z-0"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] sm:w-[700px] sm:h-[700px] opacity-65 z-0"
       />
 
-      {/* Soft atmospheric depth halos */}
+      {/* Soft atmospheric aurora halos */}
       <div
-        className="absolute top-1/4 left-1/4 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-25 pointer-events-none animate-float"
-        style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.22), transparent 70%)' }}
+        className="absolute top-1/4 left-1/5 w-[30rem] h-[30rem] rounded-full blur-3xl opacity-35 pointer-events-none animate-float"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.24), transparent 70%)' }}
       />
       <div
-        className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-20 pointer-events-none animate-float"
-        style={{ background: 'radial-gradient(circle, rgba(79,70,229,0.22), transparent 70%)', animationDelay: '-3s' }}
+        className="absolute bottom-1/4 right-1/5 w-96 h-96 rounded-full blur-3xl opacity-30 pointer-events-none animate-float"
+        style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.22), transparent 70%)', animationDelay: '-3s' }}
       />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">

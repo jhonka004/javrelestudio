@@ -7,6 +7,7 @@ import Navbar                 from './components/Navbar'
 import ElasticSideMenu        from './components/ElasticSideMenu'
 import HeroSection            from './components/HeroSection'
 import PortfolioSection       from './components/PortfolioSection'
+import ParallaxTechScene      from './components/ParallaxTechScene'
 import ServicesSection        from './components/ServicesSection'
 import ContactSection         from './components/ContactSection'
 import Footer                 from './components/Footer'
@@ -41,6 +42,8 @@ export default function App() {
           <HeroSection />
 
           <PortfolioSection />
+
+          <ParallaxTechScene />
 
           <ServicesSection />
 
