@@ -1,143 +1,304 @@
 /**
  * MorphingProjectCard.jsx
  * ─────────────────────────────────────────────────────────────────
- * Tarjeta Bento Grid tipo "Ventana Viva" con previsualizaciones UI
- * dinámicas de cada plataforma, microinteracciones con Framer Motion,
- * bordes definidos (border-slate-200/80) y contraste impecable en modo claro.
+ * Tarjeta Bento Grid de alto impacto visual con:
+ *  - Fondos dark/mesh-gradient (gris pizarra, índigo, cian profundo)
+ *  - Liquid SVG clipPath warp animado con GSAP en hover
+ *  - Previsualizaciones UI vivas de cada plataforma
+ *  - Tipografía blanca de alto contraste sobre fondos oscuros
+ *  - Microinteracciones Framer Motion
  */
 
-import { motion } from 'framer-motion'
+import { useRef, useEffect, useCallback } from 'react'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import gsap from 'gsap'
 
-function ProjectWindowPreview({ previewId, color, url }) {
-  const host = url.replace(/^https?:\/\//, '')
+/* ─── Paleta de mesh-gradients por tarjeta ─── */
+const CARD_THEMES = {
+  comercia: {
+    bg: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #0C2340 100%)',
+    accent: '#3B82F6',
+    glow: 'rgba(37,99,235,0.35)',
+    border: 'rgba(59,130,246,0.3)',
+  },
+  javrelstore: {
+    bg: 'linear-gradient(135deg, #0C1A2E 0%, #0E7490 50%, #0F172A 100%)',
+    accent: '#06B6D4',
+    glow: 'rgba(8,145,178,0.35)',
+    border: 'rgba(6,182,212,0.3)',
+  },
+  evora: {
+    bg: 'linear-gradient(135deg, #1E0B3A 0%, #4C1D95 50%, #1E0B3A 100%)',
+    accent: '#A78BFA',
+    glow: 'rgba(79,70,229,0.4)',
+    border: 'rgba(167,139,250,0.3)',
+  },
+  clones: {
+    bg: 'linear-gradient(135deg, #0F172A 0%, #1D2D3F 40%, #0A2540 100%)',
+    accent: '#38BDF8',
+    glow: 'rgba(14,165,233,0.3)',
+    border: 'rgba(56,189,248,0.25)',
+  },
+  green: {
+    bg: 'linear-gradient(135deg, #052E16 0%, #064E3B 50%, #022C22 100%)',
+    accent: '#34D399',
+    glow: 'rgba(5,150,105,0.4)',
+    border: 'rgba(52,211,153,0.3)',
+  },
+  realpe: {
+    bg: 'linear-gradient(135deg, #0C1A2E 0%, #155E75 50%, #0F172A 100%)',
+    accent: '#22D3EE',
+    glow: 'rgba(8,145,178,0.35)',
+    border: 'rgba(34,211,238,0.25)',
+  },
+  mrpollo: {
+    bg: 'linear-gradient(135deg, #1C1109 0%, #78350F 50%, #1C1109 100%)',
+    accent: '#FBBF24',
+    glow: 'rgba(217,119,6,0.4)',
+    border: 'rgba(251,191,36,0.3)',
+  },
+  jrcellcity: {
+    bg: 'linear-gradient(135deg, #150B2E 0%, #3730A3 50%, #150B2E 100%)',
+    accent: '#818CF8',
+    glow: 'rgba(99,102,241,0.4)',
+    border: 'rgba(129,140,248,0.3)',
+  },
+}
+
+/* ─── SVG Liquid Warp ClipPath ─── */
+function LiquidClipWrapper({ children, accentColor, glowColor, borderColor }) {
+  const svgRef = useRef(null)
+  const pathRef = useRef(null)
+  const rafRef = useRef(null)
+  const stateRef = useRef({
+    mx: 0.5, my: 0.5,     // mouse normalizado [0..1]
+    warp: 0,              // intensidad actual 0..1
+    isHovered: false,
+  })
+
+  // Genera los 4 puntos de control de Bezier cúbico para los 4 lados
+  const buildPath = useCallback((w, h, s) => {
+    const inset = 16 // border-radius base
+    const amp = s * 22 // amplitud máxima del warp
+    const { mx, my } = stateRef.current
+
+    // Curvas Bezier que se deforman según posición del cursor
+    const topWarp    = (mx - 0.5) * amp
+    const bottomWarp = (0.5 - mx) * amp
+    const leftWarp   = (my - 0.5) * amp
+    const rightWarp  = (0.5 - my) * amp
+
+    return [
+      `M ${inset} 0`,
+      `Q ${w / 2 + topWarp} ${-amp * s * 0.3} ${w - inset} 0`,        // top
+      `Q ${w + amp * s * 0.3} ${h / 2 + rightWarp} ${w} ${h - inset}`,// right
+      `Q ${w / 2 + bottomWarp} ${h + amp * s * 0.3} ${inset} ${h}`,   // bottom
+      `Q ${-amp * s * 0.3} ${h / 2 + leftWarp} 0 ${inset}`,           // left
+      'Z',
+    ].join(' ')
+  }, [])
+
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+
+    const container = svg.parentElement
+    const updateSize = () => {
+      const { width, height } = container.getBoundingClientRect()
+      svg.setAttribute('width', width)
+      svg.setAttribute('height', height)
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
+    }
+    updateSize()
+    const ro = new ResizeObserver(updateSize)
+    ro.observe(container)
+
+    const onMouseMove = (e) => {
+      const rect = container.getBoundingClientRect()
+      stateRef.current.mx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+      stateRef.current.my = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height))
+    }
+
+    const onEnter = () => { stateRef.current.isHovered = true }
+    const onLeave = () => { stateRef.current.isHovered = false }
+
+    container.addEventListener('mousemove', onMouseMove)
+    container.addEventListener('mouseenter', onEnter)
+    container.addEventListener('mouseleave', onLeave)
+
+    // Loop de animación
+    const tick = () => {
+      const st = stateRef.current
+      const target = st.isHovered ? 1 : 0
+      st.warp += (target - st.warp) * 0.08  // lerp suave
+
+      const { width: w, height: h } = container.getBoundingClientRect()
+      if (pathRef.current && w > 0) {
+        pathRef.current.setAttribute('d', buildPath(w, h, st.warp))
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      ro.disconnect()
+      container.removeEventListener('mousemove', onMouseMove)
+      container.removeEventListener('mouseenter', onEnter)
+      container.removeEventListener('mouseleave', onLeave)
+    }
+  }, [buildPath])
+
+  const clipId = useRef(`clip-${Math.random().toString(36).slice(2)}`)
 
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden border border-slate-200/90 bg-white shadow-sm flex flex-col">
-      {/* Mini barra de navegador */}
-      <div className="flex items-center justify-between px-3 py-2 bg-slate-50/90 border-b border-slate-200/70">
+    <div className="relative w-full h-full overflow-visible">
+      {/* SVG que define el clipPath dinámico y el borde luminoso */}
+      <svg
+        ref={svgRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{ overflow: 'visible', zIndex: 2 }}
+      >
+        <defs>
+          <clipPath id={clipId.current} clipPathUnits="userSpaceOnUse">
+            <path ref={pathRef} />
+          </clipPath>
+          <filter id={`glow-${clipId.current}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        {/* Borde luminoso que sigue el path */}
+        <path
+          ref={(el) => {
+            // Mirror del pathRef para el borde glow
+            if (el && pathRef.current) {
+              const observer = new MutationObserver(() => {
+                el.setAttribute('d', pathRef.current?.getAttribute('d') || '')
+              })
+              if (pathRef.current) {
+                observer.observe(pathRef.current, { attributes: true, attributeFilter: ['d'] })
+              }
+              el.setAttribute('d', pathRef.current?.getAttribute('d') || '')
+            }
+          }}
+          fill="none"
+          stroke={borderColor}
+          strokeWidth="1.5"
+          style={{ filter: `drop-shadow(0 0 8px ${glowColor})` }}
+        />
+      </svg>
+
+      {/* Contenido clippeado */}
+      <div
+        className="w-full h-full"
+        style={{ clipPath: `url(#${clipId.current})` }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Previsualizaciones UI por plataforma ─── */
+function ProjectWindowPreview({ previewId, color, url, theme }) {
+  const host = url.replace(/^https?:\/\//, '')
+  const { accent } = theme
+
+  return (
+    <div className="relative w-full h-full flex flex-col" style={{ background: 'transparent' }}>
+      {/* Mini barra de navegador — dark mode */}
+      <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.3)' }}>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-rose-400/80" />
-          <span className="w-2 h-2 rounded-full bg-amber-400/80" />
-          <span className="w-2 h-2 rounded-full bg-emerald-400/80" />
+          <span className="w-2 h-2 rounded-full bg-rose-500/70" />
+          <span className="w-2 h-2 rounded-full bg-amber-500/70" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500/70" />
         </div>
-        <span className="font-mono text-[10px] text-[#475569] truncate max-w-[160px] bg-white px-2 py-0.5 rounded border border-slate-200/70">
+        <span className="font-mono text-[9px] truncate max-w-[160px] px-2 py-0.5 rounded" style={{ color: 'rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
           {host}
         </span>
-        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: accent, boxShadow: `0 0 6px ${accent}` }} />
       </div>
 
-      {/* Contenido UI vivo por plataforma */}
-      <div className="relative flex-1 p-3.5 overflow-hidden bg-gradient-to-br from-white via-slate-50/70 to-slate-100/60 transition-transform duration-500 ease-out group-hover:scale-[1.04]">
+      {/* Contenido UI vivo */}
+      <div className="relative flex-1 p-3 overflow-hidden transition-transform duration-500 ease-out group-hover:scale-[1.03]">
+
         {previewId === 'comercia' && (
-          <div className="h-full flex flex-col justify-between gap-2.5">
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-xl bg-white p-2.5 border border-slate-200/80 shadow-xs">
-                <div className="text-[9px] font-mono text-[#475569]">VENTAS HOY</div>
-                <div className="text-sm font-black text-[#0F172A]">$4.82M</div>
-                <div className="text-[9px] font-semibold text-emerald-600">+18.4% ↑</div>
-              </div>
-              <div className="rounded-xl bg-white p-2.5 border border-slate-200/80 shadow-xs">
-                <div className="text-[9px] font-mono text-[#475569]">FACTURAS DIAN</div>
-                <div className="text-sm font-black text-[#2563EB]">142</div>
-                <div className="text-[9px] font-semibold text-[#475569]">En línea</div>
-              </div>
-              <div className="rounded-xl bg-white p-2.5 border border-slate-200/80 shadow-xs">
-                <div className="text-[9px] font-mono text-[#475569]">STOCK OK</div>
-                <div className="text-sm font-black text-[#0F172A]">98.2%</div>
-                <div className="text-[9px] font-semibold text-[#0891B2]">3 sedes</div>
-              </div>
+          <div className="h-full flex flex-col gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
+              {[['VENTAS', '$4.82M', '+18%'], ['FACTURAS', '142', 'DIAN'], ['STOCK', '98.2%', '3 sedes']].map(([label, val, sub]) => (
+                <div key={label} className="rounded-lg p-2" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="text-[8px] font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</div>
+                  <div className="text-xs font-black text-white">{val}</div>
+                  <div className="text-[8px] font-semibold" style={{ color: accent }}>{sub}</div>
+                </div>
+              ))}
             </div>
-            <div className="flex-1 rounded-xl bg-white border border-slate-200/80 p-2.5 flex items-end gap-1.5">
-              {[38, 62, 48, 76, 58, 88, 72, 95].map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-t-md transition-all duration-500 group-hover:opacity-100 opacity-85"
-                  style={{
-                    height: `${h}%`,
-                    background: i >= 6 ? 'linear-gradient(to top, #2563EB, #0891B2)' : '#CBD5E1',
-                  }}
-                />
+            <div className="flex-1 rounded-lg p-2 flex items-end gap-1" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {[38, 55, 48, 72, 60, 85, 70, 92].map((h, i) => (
+                <div key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: i >= 5 ? `linear-gradient(to top, ${accent}, ${accent}99)` : 'rgba(255,255,255,0.15)' }} />
               ))}
             </div>
           </div>
         )}
 
         {previewId === 'javrelstore' && (
-          <div className="h-full flex flex-col justify-between gap-2">
-            <div className="rounded-xl bg-[#0F172A] text-white p-3 flex items-center justify-between">
+          <div className="h-full flex flex-col gap-2">
+            <div className="rounded-lg p-2.5 flex items-center justify-between" style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.25)' }}>
               <div>
-                <div className="text-[9px] font-mono text-cyan-400 uppercase">Setup Pro 2026</div>
-                <div className="text-xs font-bold">Periféricos & Gaming</div>
+                <div className="text-[8px] font-mono" style={{ color: accent }}>SETUP PRO 2026</div>
+                <div className="text-xs font-bold text-white">Periféricos Gaming</div>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
-                TOP
-              </span>
+              <span className="px-2 py-0.5 rounded-full text-[8px] font-bold" style={{ background: `${accent}20`, color: accent, border: `1px solid ${accent}50` }}>TOP</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 flex-1">
-              <div className="rounded-xl bg-white border border-slate-200/80 p-2.5 flex flex-col justify-between">
-                <div className="h-8 rounded-lg bg-gradient-to-r from-cyan-500/15 to-blue-600/15 flex items-center justify-center text-sm">
-                  🎧
+            <div className="grid grid-cols-2 gap-1.5 flex-1">
+              {['🎧 Audio Studio', '⌨️ Mech Keys', '🖱️ Pro Mouse', '💡 RGB Setup'].map((item) => (
+                <div key={item} className="rounded-lg p-2 flex items-center gap-1.5" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <span className="text-sm">{item.slice(0, 2)}</span>
+                  <span className="text-[9px] text-white/70">{item.slice(3)}</span>
                 </div>
-                <div className="text-[10px] font-bold text-[#0F172A]">Audio Studio</div>
-                <div className="text-[10px] font-mono font-bold text-[#0891B2]">$389.000</div>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-200/80 p-2.5 flex flex-col justify-between">
-                <div className="h-8 rounded-lg bg-gradient-to-r from-indigo-500/15 to-cyan-500/15 flex items-center justify-center text-sm">
-                  ⌨️
-                </div>
-                <div className="text-[10px] font-bold text-[#0F172A]">Mech RGB 75%</div>
-                <div className="text-[10px] font-mono font-bold text-[#2563EB]">$249.000</div>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
         {previewId === 'evora' && (
-          <div className="h-full flex flex-col justify-between rounded-xl bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/70 border border-indigo-100 p-3">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase text-[#4F46E5] font-semibold">
-                ÉVORA · PARIS
-              </span>
-              <span className="text-[9px] px-2 py-0.5 rounded-full bg-indigo-100 text-[#4F46E5] font-semibold">
-                Eau de Parfum
-              </span>
+          <div className="h-full flex flex-col gap-2">
+            <div className="text-center py-2">
+              <div className="text-[8px] font-mono tracking-widest uppercase" style={{ color: accent }}>Boutique Olfativa</div>
+              <div className="text-sm font-black text-white italic">Évora Perfumes</div>
             </div>
-            <div className="my-auto flex items-center gap-3">
-              <div className="w-11 h-14 rounded-xl bg-gradient-to-b from-indigo-500/20 to-purple-600/25 border border-indigo-200 flex items-center justify-center text-lg shadow-inner">
-                ✨
-              </div>
-              <div>
-                <div className="text-xs font-black text-[#0F172A]">L&apos;Essence Noir</div>
-                <div className="text-[10px] text-[#334155]">Bergamota · Oud · Ámbar</div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-[10px] font-semibold text-[#4F46E5]">
-              <span>100 ml</span>
-              <span>Catálogo sensorial →</span>
+            <div className="grid grid-cols-3 gap-1.5 flex-1">
+              {['🌹', '🌿', '🪵', '✨', '🌊', '🌸'].map((e, i) => (
+                <div key={i} className="rounded-xl flex flex-col items-center justify-center p-2 gap-1" style={{ background: i === 0 ? `${accent}20` : 'rgba(255,255,255,0.05)', border: `1px solid ${i === 0 ? accent + '50' : 'rgba(255,255,255,0.08)'}` }}>
+                  <span className="text-lg">{e}</span>
+                  <div className="w-full h-0.5 rounded" style={{ background: `${accent}60` }} />
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {previewId === 'clones' && (
-          <div className="h-full flex flex-col justify-between gap-2.5">
-            <div className="flex items-center justify-between bg-[#0F172A] text-white rounded-xl px-3 py-2.5">
+          <div className="h-full flex flex-col gap-2">
+            <div className="rounded-lg px-3 py-2 flex items-center gap-2" style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.2)' }}>
+              <span className="text-base">🖥️</span>
               <div>
-                <div className="text-[9px] font-mono text-blue-400">WORKSTATION & GAMING</div>
-                <div className="text-xs font-bold">Configurador PC a Medida</div>
-              </div>
-              <div className="text-right font-mono text-[10px] text-emerald-400 font-bold">
-                144+ FPS
+                <div className="text-[8px] font-mono" style={{ color: accent }}>CONFIGURADOR PC</div>
+                <div className="text-xs font-bold text-white">Build Pro Gamer</div>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 flex-1">
-              {[
-                { k: 'GPU', v: 'RTX Series' },
-                { k: 'CPU', v: 'Ryzen / Core' },
-                { k: 'RAM', v: 'DDR5 6000' },
-              ].map((spec) => (
-                <div key={spec.k} className="rounded-xl bg-white border border-slate-200/80 p-2 flex flex-col justify-center">
-                  <span className="font-mono text-[9px] text-[#2563EB] font-bold">{spec.k}</span>
-                  <span className="text-[10px] font-bold text-[#0F172A]">{spec.v}</span>
+            <div className="flex-1 grid grid-rows-4 gap-1">
+              {[['CPU', 'AMD Ryzen 9', '100%'], ['GPU', 'RTX 4080', '90%'], ['RAM', '64GB DDR5', '75%'], ['SSD', '2TB NVMe', '60%']].map(([comp, val, pct]) => (
+                <div key={comp} className="flex items-center gap-2 px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <div className="text-[8px] font-mono w-7" style={{ color: 'rgba(255,255,255,0.4)' }}>{comp}</div>
+                  <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                    <div className="h-full rounded-full" style={{ width: pct, background: `linear-gradient(to right, ${accent}, ${accent}99)` }} />
+                  </div>
+                  <div className="text-[8px] text-white/60">{val}</div>
                 </div>
               ))}
             </div>
@@ -145,99 +306,77 @@ function ProjectWindowPreview({ previewId, color, url }) {
         )}
 
         {previewId === 'green' && (
-          <div className="h-full flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-emerald-50/90 via-white to-teal-50/70 border border-emerald-200/70 p-3">
-            <div className="flex flex-col justify-between h-full">
-              <span className="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-mono font-bold">
-                ● MUZO · EXPORT
-              </span>
-              <div>
-                <div className="text-xs font-black text-[#0F172A]">Esmeraldas Certificadas</div>
-                <div className="text-[10px] text-[#334155]">Origen Colombia · Envío Global</div>
-              </div>
-              <div className="text-[10px] font-bold text-emerald-700">Certificación Internacional ✓</div>
+          <div className="h-full flex flex-col gap-2">
+            <div className="text-center pt-1">
+              <div className="text-[8px] font-mono tracking-widest" style={{ color: accent }}>ESMERALDAS · COLOMBIA</div>
+              <div className="text-xs font-black text-white">Green Emeralds</div>
             </div>
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/30 border border-emerald-300/70 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <polygon points="10,4 22,4 28,12 16,28 4,12" fill="#059669" fillOpacity="0.22" stroke="#059669" strokeWidth="1.8" />
-                <polyline points="4,12 28,12" stroke="#059669" strokeWidth="1.3" />
-                <polyline points="10,4 16,12 22,4" stroke="#059669" strokeWidth="1.2" />
-              </svg>
+            <div className="flex-1 grid grid-cols-2 gap-1.5">
+              {[['💎', 'Certificadas', 'GIA & Lab'], ['🌍', 'Exportación', 'Mundial'], ['✅', 'Calidad', 'AAA'], ['📦', 'Envío', 'Asegurado']].map(([icon, title, sub]) => (
+                <div key={title} className="rounded-lg p-2 flex flex-col items-center gap-1 text-center" style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                  <span>{icon}</span>
+                  <div className="text-[9px] font-bold text-white">{title}</div>
+                  <div className="text-[8px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{sub}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {previewId === 'realpe' && (
-          <div className="h-full flex flex-col justify-between gap-2 rounded-xl bg-white border border-slate-200/80 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-[#0F172A]">URBAN RUNNER v2</span>
-              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-[#0891B2] border border-cyan-200">
-                NEW DROP
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-2xl">👟</span>
-              <div className="flex gap-1">
-                {['39', '40', '41', '42'].map((t, idx) => (
-                  <span
-                    key={t}
-                    className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border ${
-                      idx === 1
-                        ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                        : 'bg-slate-50 text-[#334155] border-slate-200'
-                    }`}
-                  >
-                    {t}
-                  </span>
-                ))}
+          <div className="h-full flex flex-col gap-2">
+            <div className="rounded-lg p-2 flex items-center gap-2" style={{ background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.2)' }}>
+              <span className="text-lg">👟</span>
+              <div>
+                <div className="text-[8px] font-mono" style={{ color: accent }}>NUEVA COLECCIÓN</div>
+                <div className="text-xs font-bold text-white">Realpe Shoes 2026</div>
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-[#334155]">Pago contraentrega & online</span>
-              <span className="font-bold text-[#0891B2]">$219.900</span>
+            <div className="flex-1 grid grid-cols-2 gap-1.5">
+              {[['Urbano', '#cian'], ['Deportivo', '#azul'], ['Casual', '#slate'], ['Premium', '#gold']].map(([cat]) => (
+                <div key={cat} className="rounded-lg p-2 text-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="text-xs font-bold text-white">{cat}</div>
+                  <div className="mt-1 h-0.5 w-full rounded" style={{ background: accent }} />
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {previewId === 'mrpollo' && (
-          <div className="h-full flex flex-col justify-between gap-2 rounded-xl bg-gradient-to-br from-amber-50/80 to-white border border-amber-200/70 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-[#0F172A]">Pedido en Línea</span>
-              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                ⏱ 18-25 min
-              </span>
+          <div className="h-full flex flex-col gap-2">
+            <div className="text-center py-1">
+              <div className="text-[8px] font-mono" style={{ color: accent }}>PEDIDOS EN LÍNEA</div>
+              <div className="text-sm font-black text-white">🍗 Mr. Pollo</div>
             </div>
-            <div className="flex items-center gap-2.5 bg-white rounded-xl p-2 border border-amber-200/60">
-              <span className="text-xl">🍗</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-bold text-[#0F172A] truncate">Combo Familiar Crunch</div>
-                <div className="text-[10px] text-[#334155]">Papas + Bebida 1.5L</div>
-              </div>
-              <span className="text-[10px] font-mono font-bold text-amber-700">+$42k</span>
-            </div>
-            <div className="text-[10px] font-semibold text-amber-700 flex justify-between">
-              <span>Seguimiento en vivo</span>
-              <span>Ordenar →</span>
+            <div className="flex-1 flex flex-col gap-1.5">
+              {[['Pechuga BBQ', '$28.000', '⭐4.9'], ['Combo Familiar', '$52.000', '⭐5.0'], ['Alitas Crispy', '$18.000', '⭐4.8']].map(([item, price, stars]) => (
+                <div key={item} className="rounded-lg px-2.5 py-1.5 flex items-center justify-between" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.15)' }}>
+                  <span className="text-[9px] font-semibold text-white">{item}</span>
+                  <span className="text-[8px]" style={{ color: accent }}>{price}</span>
+                  <span className="text-[8px] text-white/50">{stars}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {previewId === 'jrcellcity' && (
-          <div className="h-full flex flex-col justify-between gap-2 rounded-xl bg-white border border-slate-200/80 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-[#0F172A]">Catálogo Mobile 5G</span>
-              <span className="text-[9px] font-mono text-[#4F46E5] font-bold">STOCK LIVE</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-slate-50 border border-slate-200/80 p-2">
-                <div className="text-[10px] font-bold text-[#0F172A]">📱 Pro Max 256GB</div>
-                <div className="text-[9px] text-[#334155]">Garantía 12 meses</div>
-              </div>
-              <div className="rounded-lg bg-slate-50 border border-slate-200/80 p-2">
-                <div className="text-[10px] font-bold text-[#0F172A]">⚡ Carga MagSafe</div>
-                <div className="text-[9px] text-[#334155]">Accesorios orig.</div>
+          <div className="h-full flex flex-col gap-2">
+            <div className="rounded-lg p-2 flex items-center gap-2" style={{ background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.2)' }}>
+              <span className="text-lg">📱</span>
+              <div>
+                <div className="text-[8px] font-mono" style={{ color: accent }}>CATÁLOGO DIGITAL</div>
+                <div className="text-xs font-bold text-white">JR CellCity</div>
               </div>
             </div>
-            <div className="text-[10px] font-semibold text-[#4F46E5]">Comparador instantáneo →</div>
+            <div className="flex-1 grid grid-cols-3 gap-1">
+              {['iPhone', 'Samsung', 'Xiaomi', 'Fundas', 'Cables', 'Cargadores'].map((item) => (
+                <div key={item} className="rounded-md p-1.5 text-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="text-[8px] text-white/70">{item}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -245,98 +384,162 @@ function ProjectWindowPreview({ previewId, color, url }) {
   )
 }
 
+/* ─── Componente principal de tarjeta ─── */
 export default function MorphingProjectCard({ project, bentoClass = '', delay = 0 }) {
-  const {
-    name,
-    desc,
-    url,
-    tag,
-    color = '#2563EB',
-    featured = false,
-    previewId,
-    techStack = [],
-  } = project
+  const { name, desc, url, tag, color, previewId, techStack, featured } = project
+  const theme = CARD_THEMES[previewId] || CARD_THEMES.comercia
+  const cardRef = useRef(null)
+
+  // 3D tilt suave con spring
+  const rotX = useSpring(useMotionValue(0), { stiffness: 120, damping: 20 })
+  const rotY = useSpring(useMotionValue(0), { stiffness: 120, damping: 20 })
+
+  const handleMouseMove = useCallback((e) => {
+    const rect = cardRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const cx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)
+    const cy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)
+    rotX.set(-cy * 7)
+    rotY.set(cx * 7)
+  }, [rotX, rotY])
+
+  const handleMouseLeave = useCallback(() => {
+    rotX.set(0)
+    rotY.set(0)
+  }, [rotX, rotY])
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 26 }}
+      ref={cardRef}
+      className={`group relative ${bentoClass} cursor-pointer`}
+      style={{
+        minHeight: featured ? 320 : 280,
+        perspective: 800,
+        rotateX: rotX,
+        rotateY: rotY,
+      }}
+      initial={{ opacity: 0, y: 32 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: 0.55, delay: delay / 1000, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -6 }}
-      className={`
-        glass-card relative rounded-3xl overflow-hidden flex flex-col group
-        border border-slate-200/80
-        shadow-[0_20px_40px_-15px_rgba(15,23,42,0.08)]
-        hover:shadow-[0_28px_60px_-15px_rgba(37,99,235,0.16)]
-        hover:border-blue-300/70 transition-all duration-300
-        ${bentoClass}
-      `}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.55, delay: delay / 1000, ease: [0.22, 1, 0.36, 1] }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Reflejo superior de luz */}
-      <div
-        className="absolute inset-x-0 top-0 h-px pointer-events-none z-20"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent)' }}
-      />
+      <LiquidClipWrapper
+        accentColor={theme.accent}
+        glowColor={theme.glow}
+        borderColor={theme.border}
+      >
+        {/* Fondo mesh gradient principal */}
+        <div
+          className="absolute inset-0"
+          style={{ background: theme.bg }}
+        />
 
-      {/* Ventana Viva del proyecto */}
-      <div className={`p-3.5 pb-0 flex-shrink-0 ${featured ? 'h-56 sm:h-64' : 'h-44 sm:h-48'}`}>
-        <ProjectWindowPreview previewId={previewId} color={color} url={url} />
-      </div>
+        {/* Noise texture overlay sutil */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
 
-      {/* Información y badges */}
-      <div className="p-5 sm:p-6 flex flex-col flex-1 justify-between gap-4">
-        <div>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span
-              className="font-mono text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
-              style={{ background: `${color}14`, color }}
-            >
-              {tag}
-            </span>
-          </div>
+        {/* Glow ambiental en hover */}
+        <motion.div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{
+            background: `radial-gradient(ellipse at 50% 0%, ${theme.glow} 0%, transparent 70%)`,
+          }}
+        />
 
-          <h3 className="text-lg sm:text-xl font-extrabold text-[#0F172A] mb-1.5 group-hover:text-[#2563EB] transition-colors leading-snug">
-            {name}
-          </h3>
-          <p className="text-sm text-[#334155] leading-relaxed">
-            {desc}
-          </p>
-        </div>
-
-        {/* Badges tecnológicos + Botón Explorar plataforma */}
-        <div className="pt-2 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-            {techStack.map((tech) => (
+        {/* Contenido */}
+        <div className="relative z-10 flex flex-col h-full p-4 gap-3">
+          {/* Header: tag + nombre */}
+          <div className="flex items-start justify-between gap-2">
+            <div>
               <span
-                key={tech}
-                className="font-mono text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-[#334155] border border-slate-200/80"
+                className="inline-block px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider mb-1.5"
+                style={{ background: `${theme.accent}18`, color: theme.accent, border: `1px solid ${theme.accent}30` }}
               >
-                {tech}
+                {tag}
               </span>
-            ))}
+              <h3 className="text-base font-black text-white leading-tight tracking-tight">
+                {name}
+              </h3>
+            </div>
+            {/* Indicador de color / status */}
+            <div
+              className="w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0 animate-pulse"
+              style={{ background: theme.accent, boxShadow: `0 0 8px ${theme.accent}` }}
+            />
           </div>
 
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all duration-200 group-hover:shadow-md"
-            style={{ backgroundColor: color }}
+          {/* Previsualización UI */}
+          <div
+            className="relative flex-1 rounded-xl overflow-hidden"
+            style={{
+              background: 'rgba(0,0,0,0.25)',
+              border: `1px solid ${theme.border}`,
+              minHeight: 120,
+            }}
           >
-            Explorar plataforma
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 12 12"
-              fill="none"
-              className="group-hover:translate-x-0.5 transition-transform"
+            <ProjectWindowPreview
+              previewId={previewId}
+              color={color}
+              url={url}
+              theme={theme}
+            />
+          </div>
+
+          {/* Footer: descripción, tech stack, botón */}
+          <div className="space-y-2.5">
+            <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+              {desc}
+            </p>
+
+            {/* Tech badges */}
+            <div className="flex flex-wrap gap-1.5">
+              {techStack?.map((tech) => (
+                <span
+                  key={tech}
+                  className="px-2 py-0.5 rounded text-[9px] font-mono font-semibold"
+                  style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+
+            {/* CTA: Explorar plataforma */}
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group/btn flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-300"
+              style={{
+                background: `${theme.accent}18`,
+                border: `1px solid ${theme.accent}40`,
+                color: theme.accent,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = `${theme.accent}30`
+                e.currentTarget.style.borderColor = `${theme.accent}70`
+                e.currentTarget.style.boxShadow = `0 0 20px ${theme.glow}`
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = `${theme.accent}18`
+                e.currentTarget.style.borderColor = `${theme.accent}40`
+                e.currentTarget.style.boxShadow = 'none'
+              }}
             >
-              <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+              <span>Explorar plataforma</span>
+              <svg className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-1" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </a>
+          </div>
         </div>
-      </div>
+      </LiquidClipWrapper>
     </motion.article>
   )
 }

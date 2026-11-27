@@ -51,7 +51,7 @@ const PROJECTS = [
   {
     name: 'Green Emeralds',
     desc: 'Joyería y exportación internacional de esmeraldas colombianas certificadas.',
-    url: 'https://greenesmeraldcol.com',
+    url: 'https://greenesmeraldcol.com', // ✅ URL verificada: col con "c"
     tag: 'Export · Joyería',
     color: '#059669',
     previewId: 'green',
@@ -92,7 +92,7 @@ const PROJECTS = [
 
 export default function PortfolioSection() {
   return (
-    <section id="portfolio" className="relative py-24 sm:py-28 px-6 bg-white">
+    <section id="portfolio" className="relative py-24 sm:py-28 px-6" style={{ background: 'linear-gradient(180deg, #F8FAFC 0%, #EFF3FA 60%, #F1F5F9 100%)' }}>
       <div className="max-w-7xl mx-auto">
         {/* Section header */}
         <div className="mb-12 sm:mb-14">
