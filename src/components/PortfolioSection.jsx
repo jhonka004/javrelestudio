@@ -1,93 +1,81 @@
 /**
- * PortfolioSection.jsx — Bento Grid Asimétrico con BrowserPreviewCard 3D
- * 8 plataformas reales con capturas .webp optimizadas (loading="lazy"),
- * efecto 3D Tilt/Flip acelerado por GPU y enlace exacto:
- * Green Emeralds -> https://greenesmeraldscol.com/
+ * PortfolioSection.jsx — Galería 3D Premium de 2 Columnas
+ * Conserva los 8 proyectos reales y todas sus URLs intactas.
  */
 import BrowserPreviewCard from './BrowserPreviewCard'
 
 const PROJECTS = [
   {
     name: 'ComerCIA POS',
-    desc: 'Sistema POS, inventario multi-sucursal y facturación electrónica en la nube para comercios modernos.',
+    desc: 'Sistema POS, inventario multisucursal y facturación electrónica en la nube para comercios modernos.',
     url: 'https://comercia.cloud',
-    tag: 'SaaS · POS · ERP',
+    tag: 'POS · ERP',
     previewId: 'comercia',
     techStack: ['React', 'Cloud API', 'Facturación DIAN', 'PostgreSQL'],
     specs: ['Sincronización multi-caja en tiempo real', 'Control de inventario y kardex automático', 'Reportes financieros e impresión térmica'],
-    featured: true,
-    bentoClass: 'md:col-span-2 lg:col-span-4',
   },
   {
     name: 'JavrelStore',
-    desc: 'E-commerce Tech & Gaming con catálogo dinámico y checkout ultrarrápido.',
+    desc: 'Tienda online moderna, segura y escalable, especializada en tecnología y gaming.',
     url: 'https://javrelstore.shop',
-    tag: 'E-commerce',
+    tag: 'E-COMMERCE',
     previewId: 'javrelstore',
     techStack: ['Vite', 'React', 'Pagos Online', 'Edge CDN'],
     specs: ['Filtros instantáneos sin recarga', 'Carrito persistente y pasarela integrada', 'Optimización Core Web Vitals < 1s'],
-    bentoClass: 'md:col-span-1 lg:col-span-2',
   },
   {
     name: 'Évora Perfumes',
-    desc: 'Boutique online de perfumería de lujo con búsqueda por notas olfativas.',
+    desc: 'Boutique online de perfumes de lujo con una experiencia de compra elegante.',
     url: 'https://evoraperfumes.com',
-    tag: 'Luxury · Retail',
+    tag: 'LUXURY · RETAIL',
     previewId: 'evora',
     techStack: ['UI Editorial', 'E-commerce', 'WebP CDN', 'SEO'],
     specs: ['Catálogo visual de alta conversión', 'Búsqueda por familia y notas olfativas', 'Checkout optimizado para móvil'],
-    bentoClass: 'md:col-span-1 lg:col-span-2',
   },
   {
     name: 'Clones & Periféricos',
     desc: 'Plataforma especializada en hardware, PC Gamer y periféricos de alto rendimiento.',
     url: 'https://clonesyperifericos.com',
-    tag: 'Hardware · Gaming',
+    tag: 'HARDWARE · GAMING',
     previewId: 'clones',
     techStack: ['Catálogo Pro', 'Filtros Técnicos', 'API Stock', 'React'],
     specs: ['Comparador técnico de componentes', 'Gestión de inventario en tiempo real', 'Alta velocidad de carga en catálogo extenso'],
-    featured: true,
-    bentoClass: 'md:col-span-2 lg:col-span-4',
   },
   {
     name: 'Green Emeralds',
     desc: 'Joyería y exportación internacional de esmeraldas colombianas certificadas.',
     url: 'https://greenesmeraldscol.com/',
-    tag: 'Export · Joyería',
+    tag: 'EXPORT · JOYERÍA',
     previewId: 'green',
     techStack: ['Multi-idioma', 'Certificación', 'Edge Hosting', 'UI Luxury'],
     specs: ['Presentación de gemas certificadas', 'Arquitectura optimizada para clientes globales', 'Navegación fluida de alta nitidez'],
-    bentoClass: 'md:col-span-1 lg:col-span-3',
   },
   {
     name: 'Realpe Shoes',
     desc: 'Tienda online de calzado urbano y deportivo con gestión inteligente de tallas.',
     url: 'https://realpeshoes.vercel.app',
-    tag: 'Fashion · Store',
+    tag: 'FASHION · STORE',
     previewId: 'realpe',
     techStack: ['Vercel', 'React', 'Tallas Live', 'Tailwind CSS'],
     specs: ['Selector de tallas y variantes en vivo', 'Despliegue edge en Vercel', 'Diseño mobile-first de carga rápida'],
-    bentoClass: 'md:col-span-1 lg:col-span-3',
   },
   {
     name: 'Mr. Pollo',
-    desc: 'Plataforma de pedidos en línea y domicilios optimizada para conversión móvil.',
+    desc: 'Plataforma de pedidos en línea y domicilios optimizada para dispositivos móviles.',
     url: 'https://mrpollosp.com',
-    tag: 'FoodTech · Delivery',
+    tag: 'FOODTECH · DELIVERY',
     previewId: 'mrpollo',
     techStack: ['Pedidos Web', 'Mobile First', 'WhatsApp API', 'Vite'],
     specs: ['Menú interactivo con combos dinámicos', 'Flujo de pedido en menos de 30 segundos', 'Cero fricción en dispositivos móviles'],
-    bentoClass: 'md:col-span-1 lg:col-span-3',
   },
   {
     name: 'JR CellCity',
     desc: 'Catálogo digital de telefonía móvil y accesorios con búsqueda instantánea.',
     url: 'https://jrcellcity-demo.pages.dev',
-    tag: 'Mobile · Catálogo',
+    tag: 'MOBILE · CATÁLOGO',
     previewId: 'jrcellcity',
     techStack: ['Cloudflare Pages', 'Búsqueda', 'WebP', 'React'],
     specs: ['Filtrado ultrarrápido por marca y modelo', 'Distribución global en Cloudflare Edge', 'Interfaz ligera orientada a ventas'],
-    bentoClass: 'md:col-span-1 lg:col-span-3',
   },
 ]
 
@@ -95,49 +83,45 @@ export default function PortfolioSection() {
   return (
     <section
       id="portfolio"
-      className="relative py-24 sm:py-28 px-6 overflow-hidden"
-      style={{ background: '#FAFAFA' }}
+      className="relative py-24 sm:py-28 px-4 sm:px-6 overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F7FAFF 50%, #FFFFFF 100%)' }}
     >
-      {/* Mesh gradient Aurora lateral — azul eléctrico, violeta y magenta suave sobre blanco */}
+      {/* Manchas de luz difuminadas y ondas suaves en azul eléctrico y violeta */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div
-          className="absolute -left-32 top-0 w-[560px] h-[560px] rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #93C5FD 0%, transparent 70%)', filter: 'blur(70px)' }}
+          className="absolute -left-36 top-12 w-[540px] h-[540px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #087BFF 0%, transparent 70%)', filter: 'blur(80px)' }}
         />
         <div
-          className="absolute -right-32 bottom-0 w-[560px] h-[560px] rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #F9A8D4 0%, transparent 70%)', filter: 'blur(70px)' }}
-        />
-        <div
-          className="absolute left-1/2 top-1/3 -translate-x-1/2 w-[480px] h-[340px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #C4B5FD 0%, transparent 70%)', filter: 'blur(80px)' }}
+          className="absolute -right-36 bottom-12 w-[540px] h-[540px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #792BFF 0%, transparent 70%)', filter: 'blur(80px)' }}
         />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Section header */}
-        <div className="mb-12 sm:mb-14">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="font-mono text-xs font-bold text-[#2563EB] uppercase tracking-widest">
+        {/* Encabezado */}
+        <div className="text-center max-w-3xl mx-auto mb-14">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/90 border border-blue-200/80 shadow-sm px-4 py-1.5 mb-4">
+            <span className="w-2 h-2 rounded-full bg-[#087BFF]" />
+            <span className="font-mono text-xs font-bold text-[#087BFF] uppercase tracking-widest">
               Portafolio Seleccionado
             </span>
-            <div className="flex-1 h-px bg-gradient-to-r from-blue-600/35 to-transparent max-w-xs" />
           </div>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] leading-tight mb-4 tracking-tight">
-            Plataformas reales<br />
-            <span className="gradient-text">en producción</span>
+          <h2 className="text-4xl sm:text-5xl font-black text-[#101B45] leading-tight mb-4 tracking-tight">
+            Mis <span className="gradient-text">Proyectos</span> en Producción
           </h2>
-          <p className="text-[#334155] text-lg max-w-2xl">
-            Pasa el cursor para recorrer cada sitio web en vivo o gira cualquier tarjeta en 3D (<code className="font-mono text-sm text-[#2563EB]">Stack ↻</code>) para ver su arquitectura técnica.
+          <p className="text-[#66718C] text-base sm:text-lg">
+            Ocho plataformas reales diseñadas con arquitectura moderna, alto rendimiento y experiencia de usuario premium.
           </p>
         </div>
 
-        {/* Cuadrícula perfectamente uniforme y simétrica (todas las tarjetas misma dimensión) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 items-stretch">
-          {PROJECTS.map((project) => (
+        {/* Cuadrícula de 2 columnas en escritorio, 1 en móvil */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-7 items-stretch">
+          {PROJECTS.map((project, index) => (
             <BrowserPreviewCard
               key={project.name}
               project={project}
+              index={index}
             />
           ))}
         </div>

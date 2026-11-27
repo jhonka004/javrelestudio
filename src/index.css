@@ -14,8 +14,8 @@ html {
 body {
   margin: 0;
   background: #FFFFFF;
-  color: #0F172A;
-  font-family: 'Inter', sans-serif;
+  color: #101B45;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   overflow-x: hidden;
 }
 
@@ -75,10 +75,20 @@ body {
 
 /* ─── High-Contrast Light Mode Aurora Gradient Text ──────── */
 .gradient-text {
-  background: linear-gradient(135deg, #2563EB 0%, #7C3AED 52%, #EC4899 100%);
+  background: linear-gradient(135deg, #087BFF 0%, #173BCE 45%, #792BFF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ─── Respeta prefers-reduced-motion ─────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ─── Canvas full-screen background ──────────────────────── */
