@@ -32,7 +32,7 @@ export default function Navbar() {
           <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center group-hover:scale-105 transition-transform">
             <span className="font-mono text-xs font-bold" style={{ color: '#06B6D4' }}>JS</span>
           </div>
-          <span className="font-display font-bold text-ink text-sm tracking-tight hidden sm:block">
+          <span className="font-display font-bold text-[#0F172A] text-sm tracking-tight hidden sm:block">
             Javrel<span className="gradient-text">Studio</span>
           </span>
         </a>
@@ -43,10 +43,10 @@ export default function Navbar() {
             <li key={l.href}>
               <a
                 href={l.href}
-                className="text-sm font-medium text-zinc-500 hover:text-ink transition-colors duration-200 relative group"
+                className="text-sm font-medium text-[#475569] hover:text-[#0F172A] transition-colors duration-200 relative group"
               >
                 {l.label}
-                <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-electric group-hover:w-full transition-all duration-300" />
+                <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-[#2563EB] group-hover:w-full transition-all duration-300" />
               </a>
             </li>
           ))}
@@ -55,8 +55,8 @@ export default function Navbar() {
         {/* CTA */}
         <a
           href="#contact"
-          className="hidden md:inline-flex btn-magnetic items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg,#2563EB,#06B6D4)' }}
+          className="hidden md:inline-flex btn-magnetic items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white shadow-md shadow-blue-600/20"
+          style={{ background: 'linear-gradient(135deg,#2563EB,#4F46E5,#0891B2)' }}
         >
           Iniciar Proyecto
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

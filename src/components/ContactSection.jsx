@@ -43,14 +43,14 @@ export default function ContactSection() {
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 glass-card rounded-full px-4 py-2 mb-6 text-xs font-mono uppercase tracking-widest text-electric">
+          <div className="inline-flex items-center gap-2 glass-card rounded-full px-4 py-2 mb-6 text-xs font-mono font-semibold uppercase tracking-widest text-[#2563EB]">
             Cotización Rápida
           </div>
-          <h2 className="text-4xl sm:text-5xl font-black text-ink mb-4 leading-tight">
+          <h2 className="text-4xl sm:text-5xl font-black text-[#0F172A] mb-4 leading-tight tracking-tight">
             ¿Listo para construir<br />
             <span className="gradient-text">algo increíble?</span>
           </h2>
-          <p className="text-zinc-500 text-lg">
+          <p className="text-[#475569] text-lg">
             Cuéntanos qué necesitas — te respondemos en menos de 24 h.
           </p>
         </div>

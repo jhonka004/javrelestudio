@@ -27,8 +27,8 @@ const SERVICES = [
       'Facturación electrónica',
       'Reportes y dashboards',
     ],
-    color: '#7C3AED',
-    grad: 'from-violet-500/10 to-purple-500/5',
+    color: '#4F46E5',
+    grad: 'from-indigo-500/8 to-blue-500/5',
   },
   {
     icon: '📱',
@@ -40,8 +40,8 @@ const SERVICES = [
       'APIs REST & GraphQL',
       'Autenticación y seguridad',
     ],
-    color: '#06B6D4',
-    grad: 'from-cyan-500/10 to-teal-500/5',
+    color: '#0891B2',
+    grad: 'from-cyan-500/8 to-teal-500/5',
   },
   {
     icon: '🤖',
@@ -90,13 +90,13 @@ export default function ServicesSection() {
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         <div className="mb-16 text-center">
-          <div className="reveal inline-flex items-center gap-2 glass-card rounded-full px-4 py-2 mb-6 text-xs font-mono uppercase tracking-widest text-electric">
+          <div className="reveal inline-flex items-center gap-2 glass-card rounded-full px-4 py-2 mb-6 text-xs font-mono font-semibold uppercase tracking-widest text-[#2563EB]">
             Ecosistema de Soluciones
           </div>
-          <h2 className="reveal text-4xl sm:text-5xl lg:text-6xl font-black text-ink leading-tight mb-4">
+          <h2 className="reveal text-4xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] leading-tight mb-4 tracking-tight">
             Qué <span className="gradient-text">desarrollamos</span>
           </h2>
-          <p className="reveal text-zinc-500 text-lg max-w-2xl mx-auto">
+          <p className="reveal text-[#475569] text-lg max-w-2xl mx-auto">
             Cuatro pilares tecnológicos para llevar tu negocio al siguiente nivel digital.
           </p>
         </div>
@@ -106,25 +106,25 @@ export default function ServicesSection() {
           {SERVICES.map((s, i) => (
             <div
               key={s.title}
-              className={`reveal glass-card rounded-2xl p-6 group hover:shadow-xl transition-all duration-500 cursor-default
+              className={`reveal relative glass-card rounded-3xl p-6 group hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-15px_rgba(37,99,235,0.14)] transition-all duration-500 cursor-default
                 bg-gradient-to-br ${s.grad}`}
               style={{ transitionDelay: `${i * 80}ms` }}
             >
               {/* Icon */}
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform duration-300"
-                style={{ background: `${s.color}18` }}
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform duration-300 border border-white/80 shadow-sm"
+                style={{ background: `${s.color}16` }}
               >
                 {s.icon}
               </div>
 
-              <h3 className="text-base font-bold text-ink mb-0.5">{s.title}</h3>
+              <h3 className="text-base font-bold text-[#0F172A] mb-0.5">{s.title}</h3>
               <p className="text-xs font-semibold mb-4" style={{ color: s.color }}>{s.subtitle}</p>
 
               <ul className="space-y-2">
                 {s.items.map(item => (
-                  <li key={item} className="flex items-start gap-2 text-sm text-zinc-500">
-                    <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                  <li key={item} className="flex items-start gap-2 text-sm text-[#475569]">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
                     {item}
                   </li>
                 ))}

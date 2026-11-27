@@ -1,221 +1,177 @@
 /**
  * MorphingProjectCard.jsx
  * ─────────────────────────────────────────────────────────────────
- * Liquid-deformable project card inspired by Hello Monday's morph cards.
- * Technique: SVG feTurbulence + feDisplacementMap on the card border,
- * combined with CSS 3D perspective tilt tracking the cursor.
- *
- * Animation math:
- *   - Tilt:  rx = (dy/H) * MAX_TILT,  ry = -(dx/W) * MAX_TILT
- *   - Spring lerp: val += (target - val) * STIFFNESS  each frame
- *   - Displacement scale: 0 → 28 on hover, ease-out expo
+ * Tarjeta Bento Grid con Light Glassmorphism (frosted glass claro),
+ * paralaje sutil en la vista previa al hacer hover, elevación suave,
+ * reflejo de luz superior y transiciones fluidas al hacer scroll.
  */
 
 import { useRef, useEffect, useCallback, useState } from 'react'
 
-const MAX_TILT   = 12   // degrees
-const STIFFNESS  = 0.08 // spring stiffness
-const DISP_MAX   = 28   // max SVG displacement
-
-// Generate a unique filter ID per card instance
-let _uid = 0
-const uid = () => `lm-${++_uid}`
-
-export default function MorphingProjectCard({ project, style = {}, delay = 0 }) {
-  const cardRef   = useRef(null)
-  const rafRef    = useRef(null)
-  const stateRef  = useRef({
-    rx: 0, ry: 0,
-    rxt: 0, ryt: 0,
-    scale: 1, scaleT: 1,
-    disp: 0, dispT: 0,
-    glowX: 50, glowY: 50,
-    inside: false,
-  })
-  const filterId  = useRef(uid()).current
+export default function MorphingProjectCard({ project, bentoClass = '', delay = 0 }) {
+  const cardRef = useRef(null)
+  const previewRef = useRef(null)
   const [visible, setVisible] = useState(false)
 
-  // Animate spring loop
-  const animate = useCallback(() => {
-    rafRef.current = requestAnimationFrame(animate)
-    const s = stateRef.current
-    const card = cardRef.current
-    if (!card) return
-
-    // Spring lerp
-    s.rx    += (s.rxt    - s.rx)    * STIFFNESS
-    s.ry    += (s.ryt    - s.ry)    * STIFFNESS
-    s.scale += (s.scaleT - s.scale) * STIFFNESS
-    s.disp  += (s.dispT  - s.disp)  * (STIFFNESS * 0.5)
-
-    // Apply 3D transform
-    card.style.transform = `
-      perspective(900px)
-      rotateX(${s.rx}deg)
-      rotateY(${s.ry}deg)
-      scale(${s.scale})
-    `
-
-    // Animate SVG turbulence displacement
-    const feDisp = document.getElementById(`${filterId}-disp`)
-    if (feDisp) feDisp.setAttribute('scale', s.disp.toFixed(2))
-
-    // Move glass spotlight
-    card.style.setProperty('--gx', `${s.glowX}%`)
-    card.style.setProperty('--gy', `${s.glowY}%`)
-  }, [filterId])
-
   useEffect(() => {
-    // Scroll reveal
+    const el = cardRef.current
+    if (!el) return
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setVisible(true) },
-      { threshold: 0.15 }
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true)
+          obs.disconnect()
+        }
+      },
+      { threshold: 0.12 }
     )
-    if (cardRef.current) obs.observe(cardRef.current)
-
-    rafRef.current = requestAnimationFrame(animate)
-    return () => {
-      cancelAnimationFrame(rafRef.current)
-      obs.disconnect()
-    }
-  }, [animate])
-
-  const onEnter = useCallback(() => {
-    const s = stateRef.current
-    s.inside   = true
-    s.scaleT   = 1.025
-    s.dispT    = DISP_MAX
-  }, [])
-
-  const onLeave = useCallback(() => {
-    const s    = stateRef.current
-    s.inside   = false
-    s.rxt      = 0
-    s.ryt      = 0
-    s.scaleT   = 1
-    s.dispT    = 0
+    obs.observe(el)
+    return () => obs.disconnect()
   }, [])
 
   const onMove = useCallback((e) => {
-    const s    = stateRef.current
-    if (!s.inside) return
-    const rect = cardRef.current.getBoundingClientRect()
-    const dx   = e.clientX - rect.left  - rect.width  / 2
-    const dy   = e.clientY - rect.top   - rect.height / 2
-    s.rxt      = (dy / rect.height) * MAX_TILT
-    s.ryt      = -(dx / rect.width)  * MAX_TILT
-    s.glowX    = ((e.clientX - rect.left) / rect.width)  * 100
-    s.glowY    = ((e.clientY - rect.top)  / rect.height) * 100
+    const card = cardRef.current
+    const preview = previewRef.current
+    if (!card) return
+    const rect = card.getBoundingClientRect()
+    const nx = (e.clientX - rect.left) / rect.width - 0.5   // -0.5 .. 0.5
+    const ny = (e.clientY - rect.top) / rect.height - 0.5
+
+    card.style.setProperty('--gx', `${((nx + 0.5) * 100).toFixed(1)}%`)
+    card.style.setProperty('--gy', `${((ny + 0.5) * 100).toFixed(1)}%`)
+    card.style.transform = `translateY(-6px) perspective(1000px) rotateX(${(-ny * 5).toFixed(2)}deg) rotateY(${(nx * 5).toFixed(2)}deg)`
+
+    if (preview) {
+      preview.style.transform = `translate3d(${(nx * 14).toFixed(1)}px, ${(ny * 10).toFixed(1)}px, 0) scale(1.06)`
+    }
   }, [])
 
-  const { name, desc, url, tag, color = '#2563EB', emoji = '🚀' } = project
+  const onLeave = useCallback(() => {
+    const card = cardRef.current
+    const preview = previewRef.current
+    if (card) {
+      card.style.transform = 'translateY(0px) perspective(1000px) rotateX(0deg) rotateY(0deg)'
+    }
+    if (preview) {
+      preview.style.transform = 'translate3d(0px, 0px, 0) scale(1)'
+    }
+  }, [])
+
+  const { name, desc, url, tag, color = '#2563EB', emoji = '🚀', featured = false, metrics } = project
 
   return (
-    <>
-      {/* Inline SVG filter — unique per card */}
-      <svg width="0" height="0" style={{ position: 'absolute', overflow: 'hidden' }}>
-        <defs>
-          <filter id={filterId} x="-15%" y="-15%" width="130%" height="130%">
-            <feTurbulence
-              id={`${filterId}-turb`}
-              type="turbulence"
-              baseFrequency="0.02 0.02"
-              numOctaves="3"
-              seed={Math.floor(Math.random() * 100)}
-              result="noise"
-            />
-            <feDisplacementMap
-              id={`${filterId}-disp`}
-              in="SourceGraphic"
-              in2="noise"
-              scale="0"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
-
+    <article
+      ref={cardRef}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{
+        transitionDelay: visible ? `${delay}ms` : '0ms',
+        '--gx': '50%',
+        '--gy': '50%',
+      }}
+      className={`
+        glass-card relative rounded-3xl overflow-hidden flex flex-col group cursor-pointer
+        transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+        hover:shadow-[0_28px_60px_-15px_rgba(37,99,235,0.16)]
+        ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+        ${bentoClass}
+      `}
+    >
+      {/* Top light specular highlight */}
       <div
-        ref={cardRef}
-        onMouseEnter={onEnter}
-        onMouseLeave={onLeave}
-        onMouseMove={onMove}
+        className="absolute inset-x-0 top-0 h-px pointer-events-none z-20"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent)' }}
+      />
+
+      {/* Interactive cursor spotlight */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10"
         style={{
-          ...style,
-          transitionDelay: `${delay}ms`,
-          filter: `url(#${filterId})`,
-          willChange: 'transform, filter',
-          '--gx': '50%',
-          '--gy': '50%',
+          background: `radial-gradient(circle 220px at var(--gx) var(--gy), rgba(255,255,255,0.55) 0%, transparent 70%)`,
         }}
-        className={`
-          liquid-card-wrap relative rounded-2xl overflow-hidden cursor-pointer
-          glass-card group flex flex-col
-          transition-opacity duration-700
-          ${visible ? 'opacity-100' : 'opacity-0'}
-        `}
+      />
+
+      {/* Visual preview area with subtle parallax */}
+      <div
+        className={`relative overflow-hidden flex items-center justify-center flex-shrink-0 ${
+          featured ? 'h-48 sm:h-56' : 'h-32 sm:h-36'
+        }`}
+        style={{
+          background: `linear-gradient(135deg, ${color}18 0%, rgba(248,250,252,0.9) 100%)`,
+        }}
       >
-        {/* Glass spotlight */}
+        {/* Subtle decorative code-art grid */}
         <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10"
+          className="absolute inset-0 opacity-35 pointer-events-none"
           style={{
-            background: `radial-gradient(circle 180px at var(--gx) var(--gy), rgba(255,255,255,0.22) 0%, transparent 70%)`,
+            backgroundImage: `radial-gradient(${color}33 1px, transparent 1px)`,
+            backgroundSize: '18px 18px',
           }}
         />
 
-        {/* Top color band — adapts to available height */}
+        {/* Parallax preview element */}
         <div
-          className="relative flex items-center justify-center overflow-hidden flex-shrink-0"
-          style={{ background: `${color}18`, height: '110px' }}
+          ref={previewRef}
+          className="relative z-10 flex items-center justify-center transition-transform duration-300 ease-out will-change-transform"
         >
-          {/* Animated code preview (purely CSS/JS) */}
-          <div className="absolute inset-0 flex items-center justify-center select-none">
-            <span className="text-6xl opacity-30 group-hover:opacity-50 transition-opacity duration-500 group-hover:scale-110 inline-block transition-transform">
-              {emoji}
-            </span>
-          </div>
-          {/* Shimmer stripe */}
           <div
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 shimmer-bg pointer-events-none"
-          />
-          {/* Tag badge */}
-          <span
-            className="absolute top-3 left-3 font-mono text-[10px] font-medium px-2 py-1 rounded-full"
-            style={{ background: `${color}25`, color }}
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shadow-lg border border-white/80 backdrop-blur-md"
+            style={{ background: `linear-gradient(135deg, rgba(255,255,255,0.9), ${color}22)` }}
           >
-            {tag}
+            <span className="text-4xl sm:text-5xl select-none">{emoji}</span>
+          </div>
+        </div>
+
+        {/* Category tag */}
+        <span
+          className="absolute top-3.5 left-3.5 z-20 font-mono text-[10px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border border-white/60"
+          style={{ background: 'rgba(255,255,255,0.82)', color }}
+        >
+          {tag}
+        </span>
+
+        {metrics && (
+          <span className="absolute top-3.5 right-3.5 z-20 font-mono text-[10px] font-semibold px-2.5 py-1 rounded-full bg-slate-900/85 text-white">
+            {metrics}
           </span>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 relative z-10 flex flex-col flex-1 min-h-0">
-          <h3 className="text-sm font-semibold text-ink mb-1 group-hover:text-electric transition-colors duration-200 leading-snug">
-            {name}
-          </h3>
-          <p className="text-xs text-slate-500 leading-relaxed mb-3 flex-1">{desc}</p>
-
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase mt-auto"
-            style={{ color }}
-            onClick={e => e.stopPropagation()}
-          >
-            Ver proyecto
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="group-hover:translate-x-0.5 transition-transform">
-              <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </a>
-        </div>
-
-        {/* Bottom border glow */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-          style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}
-        />
+        )}
       </div>
-    </>
+
+      {/* Content */}
+      <div className="p-5 sm:p-6 relative z-10 flex flex-col flex-1 min-h-0">
+        <h3 className="text-base sm:text-lg font-bold text-[#0F172A] mb-1.5 group-hover:text-[#2563EB] transition-colors duration-200 leading-snug">
+          {name}
+        </h3>
+        <p className="text-xs sm:text-sm text-[#475569] leading-relaxed mb-4 flex-1">
+          {desc}
+        </p>
+
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase mt-auto w-fit"
+          style={{ color }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Ver plataforma
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 12 12"
+            fill="none"
+            className="group-hover:translate-x-1 transition-transform duration-200"
+          >
+            <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </a>
+      </div>
+
+      {/* Bottom iridescent accent line */}
+      <div
+        className="absolute bottom-0 inset-x-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{ background: `linear-gradient(90deg, transparent, ${color}, #0891B2, transparent)` }}
+      />
+    </article>
   )
 }

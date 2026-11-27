@@ -1,267 +1,393 @@
 /**
  * InteractiveLabBanner.jsx
  * ─────────────────────────────────────────────────────────────────
- * Javrel Lab — panoramic interactive canvas container.
- * Renders a mini particle-physics environment + interactive cursor
- * attractor / repulsor. Demonstrates real-time gamified web capabilities.
+ * Javrel Lab — Integración nativa en React del motor Three.js de
+ * Papertrails (https://github.com/xikhar/papertrails).
  *
- * Physics:
- *   - Particle gravity: vy += G (per frame)
- *   - Attraction to cursor:  F = (target - pos) * K
- *   - Turbulence: Perlin-like noise via sin/cos superposition
- *   - Color: HSL cycling around a palette over time
+ * Características:
+ *  - Carga diferida (IntersectionObserver) para no bloquear el Hero.
+ *  - Pausa automática del loop WebGL cuando sale del viewport (60 FPS).
+ *  - Limpieza completa de memoria WebGL, listeners y audio al desmontar.
+ *  - Contenedor amplio de ancho completo (max-w-7xl) y gran altura.
+ *  - Botón funcional de Pantalla Completa + controles de Day/Night, Vista y Audio.
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import * as THREE from 'three'
+import { CONFIG } from '../papertrails/core/config.js'
+import { bus } from '../papertrails/core/events.js'
+import { state } from '../papertrails/core/state.js'
+import { createLoop } from '../papertrails/core/loop.js'
+import { loadAssets } from '../papertrails/assets/loader.js'
+import { createWFC } from '../papertrails/world/wfc.js'
+import { createWorld } from '../papertrails/world/world.js'
+import { createTraveller } from '../papertrails/player/traveller.js'
+import { createControls } from '../papertrails/player/controls.js'
+import { createFollowCamera } from '../papertrails/camera/follow.js'
+import { createRenderer } from '../papertrails/render/renderer.js'
+import { createLights } from '../papertrails/render/lights.js'
+import { createPost } from '../papertrails/render/post.js'
+import { createMaterials } from '../papertrails/render/materials.js'
+import { createPaperAudio } from '../papertrails/audio/paper.js'
+import { createMusic } from '../papertrails/audio/music.js'
+import { createDayNight } from '../papertrails/render/daynight.js'
+import { createLife } from '../papertrails/life/life.js'
+import { createAnimals } from '../papertrails/life/animals.js'
+import { createGame } from '../papertrails/game/index.js'
+import { createViews } from '../papertrails/camera/views.js'
 
-// ─── Lightweight 2D Perlin-like smooth noise ──────────────────────
-const smoothNoise = (x, y, t) =>
-  (Math.sin(x * 1.3 + t) + Math.cos(y * 0.9 + t * 1.1) +
-   Math.sin((x + y) * 0.7 + t * 0.8)) / 3
+const hypot2 = (a, b) => Math.sqrt(a * a + b * b)
 
-// ─── Particle ─────────────────────────────────────────────────────
-class LabParticle {
-  constructor(canvas) {
-    this.canvas = canvas
-    this.reset()
-  }
-
-  reset() {
-    this.x    = Math.random() * this.canvas.width
-    this.y    = Math.random() * this.canvas.height
-    this.vx   = (Math.random() - 0.5) * 1.5
-    this.vy   = (Math.random() - 0.5) * 1.5
-    this.size = 1.5 + Math.random() * 3
-    this.hue  = 200 + Math.random() * 100  // blue–violet range
-    this.life = 0.6 + Math.random() * 0.4
-    this.maxLife = this.life
-    this.trail = []
-  }
-
-  update(mouse, time, mode) {
-    // Record trail
-    this.trail.push({ x: this.x, y: this.y })
-    if (this.trail.length > 8) this.trail.shift()
-
-    // Turbulence field
-    const nx = smoothNoise(this.x / 120, this.y / 120, time) * 0.6
-    const ny = smoothNoise(this.x / 100, this.y / 100, time + 100) * 0.6
-
-    this.vx += nx * 0.03
-    this.vy += ny * 0.03
-
-    // Cursor interaction
-    const dx = mouse.x - this.x
-    const dy = mouse.y - this.y
-    const dist = Math.sqrt(dx * dx + dy * dy)
-    const K = mode === 'attract' ? 0.0012 : -0.0018
-
-    if (dist < 220 && dist > 1) {
-      this.vx += (dx / dist) * K * dist
-      this.vy += (dy / dist) * K * dist
-    }
-
-    // Damping
-    this.vx *= 0.97
-    this.vy *= 0.97
-
-    this.x += this.vx
-    this.y += this.vy
-    this.life -= 0.003
-
-    // Hue drift
-    this.hue += 0.3
-
-    // Wrap + respawn
-    if (this.x < 0 || this.x > this.canvas.width ||
-        this.y < 0 || this.y > this.canvas.height ||
-        this.life <= 0) {
-      this.reset()
-    }
-  }
-
-  draw(ctx) {
-    const a = Math.min(this.life / this.maxLife, 1) * 0.85
-    // Trail
-    if (this.trail.length > 2) {
-      ctx.beginPath()
-      ctx.moveTo(this.trail[0].x, this.trail[0].y)
-      for (let i = 1; i < this.trail.length; i++) {
-        ctx.lineTo(this.trail[i].x, this.trail[i].y)
-      }
-      ctx.strokeStyle = `hsla(${this.hue},90%,70%,${a * 0.3})`
-      ctx.lineWidth   = this.size * 0.5
-      ctx.stroke()
-    }
-    // Core
-    ctx.beginPath()
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
-    ctx.fillStyle = `hsla(${this.hue},90%,72%,${a})`
-    ctx.fill()
-  }
-}
-
-// ─── Component ────────────────────────────────────────────────────
 export default function InteractiveLabBanner() {
-  const canvasRef   = useRef(null)
-  const rafRef      = useRef(null)
-  const stateRef    = useRef({
-    particles: [],
-    mouse: { x: 400, y: 200 },
-    mode: 'attract',
-    time: 0,
-    fullscreen: false,
-  })
-  const [mode, setMode]           = useState('attract')
+  const containerRef = useRef(null)
+  const canvasRef = useRef(null)
+  const apiRef = useRef(null)
+  const [status, setStatus] = useState('idle') // 'idle' | 'loading' | 'ready' | 'error'
   const [fullscreen, setFullscreen] = useState(false)
-  const [hovered, setHovered]     = useState(false)
+  const [isNight, setIsNight] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
+  const [hasInteracted, setHasInteracted] = useState(false)
 
-  const toggleMode = useCallback(() => {
-    setMode(m => {
-      const next = m === 'attract' ? 'repel' : 'attract'
-      stateRef.current.mode = next
-      return next
-    })
+  useEffect(() => {
+    const onFsChange = () => {
+      setFullscreen(Boolean(document.fullscreenElement))
+    }
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
   }, [])
 
   const toggleFS = useCallback(() => {
-    const container = canvasRef.current?.parentElement
+    const el = containerRef.current
+    if (!el) return
     if (!document.fullscreenElement) {
-      container?.requestFullscreen?.()
-      setFullscreen(true)
+      el.requestFullscreen?.().catch(() => {})
     } else {
-      document.exitFullscreen?.()
-      setFullscreen(false)
+      document.exitFullscreen?.().catch(() => {})
     }
+  }, [])
+
+  const handleToggleDayNight = useCallback(() => {
+    apiRef.current?.daynight?.toggle()
+    setIsNight((n) => !n)
+  }, [])
+
+  const handleCycleView = useCallback(() => {
+    apiRef.current?.views?.next()
+  }, [])
+
+  const handleToggleMusic = useCallback(() => {
+    apiRef.current?.music?.toggle()
+    setIsMuted((m) => !m)
   }, [])
 
   useEffect(() => {
+    const container = containerRef.current
     const canvas = canvasRef.current
-    const ctx    = canvas.getContext('2d')
-    const s      = stateRef.current
+    if (!container || !canvas) return
 
-    const resize = () => {
-      canvas.width  = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
-    }
-    resize()
-    new ResizeObserver(resize).observe(canvas)
+    let disposed = false
+    let booted = false
+    const cleanupFns = []
+    let loopInstance = null
 
-    // Init particles
-    const COUNT = 220
-    s.particles = Array.from({ length: COUNT }, () => new LabParticle(canvas))
+    const bootEngine = async () => {
+      if (booted || disposed) return
+      booted = true
+      setStatus('loading')
 
-    const onMove = (e) => {
-      const rect = canvas.getBoundingClientRect()
-      s.mouse.x  = e.clientX - rect.left
-      s.mouse.y  = e.clientY - rect.top
-    }
-    canvas.addEventListener('mousemove', onMove)
-    canvas.addEventListener('touchmove', (e) => {
-      const t = e.touches[0]
-      const rect = canvas.getBoundingClientRect()
-      s.mouse.x = t.clientX - rect.left
-      s.mouse.y = t.clientY - rect.top
-    }, { passive: true })
+      try {
+        const quality = window.innerWidth < 768 ? 'med' : 'high'
+        const seed = CONFIG.DEFAULT_SEED
+        state.seed = seed
+        state.quality = quality
 
-    const render = () => {
-      rafRef.current = requestAnimationFrame(render)
-      s.time += 0.008
+        const scene = new THREE.Scene()
+        const rendererObj = createRenderer({ canvas, quality })
+        const { renderer, setSize: setRendererSize } = rendererObj
 
-      // Dark blurred trail effect
-      ctx.fillStyle = 'rgba(9,9,11,0.18)'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+        const materials = createMaterials({ quality })
+        const assets = await loadAssets({ materials, renderer, quality })
+        if (disposed) {
+          rendererObj.dispose()
+          return
+        }
+        materials.setTextures(assets.textures)
 
-      // Grid lines (subtle)
-      ctx.strokeStyle = 'rgba(255,255,255,0.03)'
-      ctx.lineWidth   = 1
-      const gSize = 60
-      for (let gx = 0; gx < canvas.width; gx += gSize) {
-        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke()
+        const lights = createLights({ scene, quality })
+        const wfc = createWFC({ seed })
+        const world = createWorld({ scene, assets, wfc, materials, quality })
+        const traveller = createTraveller({ scene, assets, world, materials })
+
+        const w0 = Math.max(1, container.clientWidth)
+        const h0 = Math.max(1, container.clientHeight)
+        const follow = createFollowCamera({ aspect: w0 / h0 })
+        const controls = createControls({ domElement: canvas, camera: follow.camera, traveller })
+        const views = createViews({ follow })
+        const post = createPost({ renderer, scene, camera: follow.camera, quality })
+        const audio = createPaperAudio({ muted: true })
+        const music = createMusic({ audio })
+        const daynight = createDayNight({ scene, night: false })
+
+        const life = CONFIG.life.enabled === false
+          ? null
+          : createLife({ scene, assets, wfc, world, daynight, camera: follow.camera, quality, seed })
+
+        const animals = CONFIG.animals.enabled === false
+          ? null
+          : createAnimals({ scene, renderer, world, wfc, traveller, daynight, assets, seed, quality })
+
+        const game = createGame({
+          scene, renderer, world, wfc, traveller, follow, controls,
+          lights, post, daynight, music, audio, life, assets, materials,
+          seed, quality, persist: false,
+        })
+        follow.setAssistGate(game.modal)
+
+        const plainDepth = new THREE.MeshDepthMaterial()
+        scene.traverse((o) => {
+          if (o.isMesh && !o.isBatchedMesh && !o.isInstancedMesh && o.castShadow && !o.customDepthMaterial) {
+            o.customDepthMaterial = plainDepth
+          }
+        })
+
+        const idle = { x: 0, z: 0 }
+        const _right = new THREE.Vector3()
+
+        const update = (dt) => {
+          state.time = loop.time
+          state.frame = loop.frame
+          const input = controls.getInput(dt) || idle
+          traveller.update(dt, game.modal() ? idle : input)
+          const p = traveller.position
+          const t = state.traveller
+          t.x = p.x; t.y = p.y; t.z = p.z
+          t.dirX = traveller.moveDir.x; t.dirZ = traveller.moveDir.z; t.speed = traveller.speed
+          _right.setFromMatrixColumn(follow.camera.matrixWorld, 0)
+          const rl = hypot2(_right.x, _right.z) || 1
+          state.listener.x = p.x; state.listener.z = p.z
+          state.listener.rightX = _right.x / rl
+          state.listener.rightZ = _right.z / rl
+          world.update(dt, p, traveller.moveDir)
+          views.update(dt)
+          follow.update(dt, traveller)
+          daynight.update(dt)
+          if (life) life.update(dt, p, follow.camera)
+          if (animals) animals.update(dt)
+          game.update(dt)
+          lights.update(dt, traveller, follow.camera)
+          materials.update(dt)
+        }
+
+        const render = (dt) => {
+          post.setFocus(follow.focusPoint)
+          post.render(dt)
+          game.atlasmap.render()
+        }
+
+        const loop = createLoop({ update, render })
+        loopInstance = loop
+
+        const resize = () => {
+          const w = Math.max(1, container.clientWidth)
+          const h = Math.max(1, container.clientHeight)
+          setRendererSize(w, h)
+          follow.setAspect(w / h)
+          post.setSize(w, h)
+          bus.emit('resize', { width: w, height: h, dpr: renderer.getPixelRatio() })
+        }
+
+        const ro = new ResizeObserver(resize)
+        ro.observe(container)
+
+        const onKey = (e) => {
+          if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return
+          const isFocused = document.activeElement === canvas || !!document.fullscreenElement
+          if (!isFocused) return
+          if (e.code === 'KeyN') handleToggleDayNight()
+          else if (e.code === 'KeyV' && !game.modal()) views.next()
+          else if (e.code === 'KeyM') handleToggleMusic()
+        }
+        window.addEventListener('keydown', onKey)
+
+        const unsubFirst = bus.once('input:first', () => setHasInteracted(true))
+
+        if (animals) await animals.ready
+        if (disposed) {
+          ro.disconnect()
+          window.removeEventListener('keydown', onKey)
+          controls.dispose()
+          game.dispose()
+          rendererObj.dispose()
+          return
+        }
+
+        resize()
+
+        let startX = 0
+        let startZ = 0
+        if (!world.isWalkable(0, 0)) {
+          outer: for (let r = 0.25; r <= 6; r += 0.25) {
+            for (let i = 0; i < 16; i++) {
+              const a = (i / 16) * Math.PI * 2
+              const nx = Math.cos(a) * r
+              const nz = Math.sin(a) * r
+              if (world.isWalkable(nx, nz)) {
+                startX = nx
+                startZ = nz
+                break outer
+              }
+            }
+          }
+        }
+
+        traveller.teleport(startX, startZ)
+        controls.clearTarget()
+        update(0)
+        follow.snap(traveller)
+        if (world.faceCamera) world.faceCamera()
+        if (life) life.update(0, traveller.position, follow.camera)
+        lights.update(0, traveller, follow.camera)
+        render(0)
+        loop.start()
+
+        apiRef.current = { daynight, views, music }
+        setStatus('ready')
+
+        cleanupFns.push(() => {
+          loop.stop()
+          ro.disconnect()
+          window.removeEventListener('keydown', onKey)
+          if (typeof unsubFirst === 'function') unsubFirst()
+          controls.dispose()
+          game.dispose()
+          life?.dispose?.()
+          animals?.dispose?.()
+          world?.dispose?.()
+          post?.dispose?.()
+          plainDepth.dispose()
+          scene.traverse((obj) => {
+            if (obj.geometry) obj.geometry.dispose()
+            if (obj.material) {
+              if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose())
+              else obj.material.dispose()
+            }
+          })
+          rendererObj.dispose()
+        })
+      } catch (err) {
+        console.error('[JavrelLab] Papertrails init failed:', err)
+        if (!disposed) setStatus('error')
       }
-      for (let gy = 0; gy < canvas.height; gy += gSize) {
-        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke()
-      }
-
-      // Cursor glow
-      const r = s.mode === 'attract' ? 90 : 70
-      const cg = ctx.createRadialGradient(s.mouse.x, s.mouse.y, 0, s.mouse.x, s.mouse.y, r)
-      cg.addColorStop(0, s.mode === 'attract' ? 'rgba(37,99,235,0.18)' : 'rgba(124,58,237,0.18)')
-      cg.addColorStop(1, 'transparent')
-      ctx.beginPath()
-      ctx.arc(s.mouse.x, s.mouse.y, r, 0, Math.PI * 2)
-      ctx.fillStyle = cg
-      ctx.fill()
-
-      // Particles
-      for (const p of s.particles) {
-        p.update(s.mouse, s.time, s.mode)
-        p.draw(ctx)
-      }
-
-      // Crosshair cursor
-      ctx.strokeStyle = s.mode === 'attract' ? 'rgba(37,99,235,0.7)' : 'rgba(124,58,237,0.7)'
-      ctx.lineWidth   = 1.5
-      const ch = 10
-      ctx.beginPath(); ctx.moveTo(s.mouse.x - ch, s.mouse.y); ctx.lineTo(s.mouse.x + ch, s.mouse.y); ctx.stroke()
-      ctx.beginPath(); ctx.moveTo(s.mouse.x, s.mouse.y - ch); ctx.lineTo(s.mouse.x, s.mouse.y + ch); ctx.stroke()
-      ctx.beginPath(); ctx.arc(s.mouse.x, s.mouse.y, 4, 0, Math.PI * 2); ctx.stroke()
     }
 
-    render()
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          if (!booted) bootEngine()
+          else loopInstance?.start()
+        } else {
+          loopInstance?.stop()
+        }
+      },
+      { rootMargin: '300px 0px', threshold: 0.01 }
+    )
+    io.observe(container)
 
     return () => {
-      cancelAnimationFrame(rafRef.current)
-      canvas.removeEventListener('mousemove', onMove)
+      disposed = true
+      io.disconnect()
+      cleanupFns.forEach((fn) => {
+        try { fn() } catch (_) {}
+      })
     }
-  }, [])
+  }, [handleToggleDayNight, handleToggleMusic])
 
   return (
-    <div className="relative rounded-3xl overflow-hidden bg-ink" style={{ height: 440 }}>
-      <canvas ref={canvasRef} id="lab-canvas" />
+    <div
+      ref={containerRef}
+      className={`relative w-full overflow-hidden bg-slate-900 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] border border-slate-200/70 transition-all duration-500 ${
+        fullscreen ? 'h-screen rounded-none' : 'h-[540px] sm:h-[640px] lg:h-[700px] rounded-3xl'
+      }`}
+    >
+      <canvas
+        ref={canvasRef}
+        tabIndex={0}
+        onClick={() => canvasRef.current?.focus()}
+        className="w-full h-full block outline-none cursor-pointer touch-none"
+      />
 
-      {/* UI overlay */}
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
-              <span className="font-mono text-xs text-cyan/80 uppercase tracking-widest">Javrel Lab · Live</span>
-            </div>
-            <h2 className="text-white/90 text-xl font-bold leading-tight">
-              Simulador de Partículas<br />
-              <span className="gradient-text">Interactivo en Tiempo Real</span>
-            </h2>
+      {status !== 'ready' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/90 backdrop-blur-md z-20">
+          <div className="w-10 h-10 rounded-full border-2 border-blue-600/20 border-t-blue-600 animate-spin mb-4" />
+          <p className="font-mono text-xs uppercase tracking-widest text-slate-600">
+            {status === 'error'
+              ? 'Error al cargar el entorno WebGL'
+              : 'Cargando mundo interactivo 3D (Papertrails Engine)...'}
+          </p>
+        </div>
+      )}
+
+      {/* HUD superior — Light Glassmorphism */}
+      <div className="absolute top-5 left-5 right-5 pointer-events-none flex items-start justify-between gap-4 z-10">
+        <div className="glass-card rounded-2xl px-4 py-3 pointer-events-auto">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="w-2 h-2 rounded-full bg-cyan-600 animate-pulse" />
+            <span className="font-mono text-[10px] font-semibold text-cyan-700 uppercase tracking-widest">
+              Javrel Lab · Motor Papertrails 3D
+            </span>
           </div>
-          <button
-            onClick={toggleFS}
-            className="pointer-events-auto glass-card text-white/70 hover:text-white p-2 rounded-xl transition-all"
-            style={{ background: 'rgba(255,255,255,0.08)' }}
-            title="Pantalla completa"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </button>
+          <h3 className="text-slate-900 text-sm sm:text-base font-bold leading-snug">
+            Simulador de Mundo Procedural en Tiempo Real
+          </h3>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 pointer-events-auto">
           <button
-            onClick={toggleMode}
-            className="pointer-events-auto btn-magnetic px-4 py-2 rounded-full text-xs font-semibold text-white transition-all"
-            style={{
-              background: mode === 'attract'
-                ? 'linear-gradient(135deg,#2563EB,#06B6D4)'
-                : 'linear-gradient(135deg,#7C3AED,#2563EB)',
-            }}
+            onClick={handleCycleView}
+            title="Cambiar cámara (V)"
+            className="glass-card px-3 py-2 rounded-xl text-xs font-semibold text-slate-800 hover:text-blue-600 transition-colors"
           >
-            {mode === 'attract' ? '⬤ Modo Atracción' : '⬤ Modo Repulsión'}
+            Vista (V)
           </button>
-          <span className="text-white/40 text-xs font-mono">
-            Mueve el cursor para interactuar
-          </span>
+          <button
+            onClick={handleToggleDayNight}
+            title="Alternar Día / Noche (N)"
+            className="glass-card px-3 py-2 rounded-xl text-xs font-semibold text-slate-800 hover:text-blue-600 transition-colors hidden sm:inline-flex"
+          >
+            {isNight ? '☀️ Día' : '🌙 Noche'}
+          </button>
+          <button
+            onClick={handleToggleMusic}
+            title="Audio procedural (M)"
+            className="glass-card px-3 py-2 rounded-xl text-xs font-semibold text-slate-800 hover:text-blue-600 transition-colors hidden sm:inline-flex"
+          >
+            {isMuted ? '🔇 Audio' : '🔊 Audio'}
+          </button>
+          <button
+            onClick={toggleFS}
+            title={fullscreen ? 'Salir de pantalla completa' : 'Expandir a pantalla completa'}
+            className="glass-card px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-slate-900/90 hover:bg-blue-600 transition-colors flex items-center gap-1.5 shadow-md"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              {fullscreen ? (
+                <path d="M5 1v4H1M11 1v4h4M15 11h-4v4M1 11h4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              ) : (
+                <path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              )}
+            </svg>
+            <span className="hidden sm:inline">{fullscreen ? 'Salir' : 'Pantalla completa'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Hint inferior */}
+      <div
+        className={`absolute bottom-5 left-1/2 -translate-x-1/2 pointer-events-none z-10 transition-opacity duration-700 ${
+          hasInteracted ? 'opacity-75' : 'opacity-100'
+        }`}
+      >
+        <div className="glass-card rounded-full px-4 py-1.5 text-[11px] font-mono text-slate-700 whitespace-nowrap">
+          Haz clic o usa WASD para caminar · Shift correr · V cámara · N día/noche
         </div>
       </div>
     </div>
